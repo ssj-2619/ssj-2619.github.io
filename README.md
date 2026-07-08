@@ -4,8 +4,6 @@ A single-file, offline-first companion app for **Forza Horizon 6** — track whi
 
 No build step, no backend, no account. Open `index.html` in a browser and it works.
 
-![version](https://img.shields.io/badge/version-1.13f2-2DE2D6?style=flat-square)
-
 ---
 
 ## Features
@@ -15,15 +13,16 @@ Add cars with their class, race type, and an optional note. Edit or delete any e
 
 ### 📊 Dashboard
 An animated, car-dashboard-styled overview:
-- A central gauge showing overall coverage %, with a toggle for a per-race-type breakdown
+- A central gauge showing overall coverage %, with a swipeable toggle for a per-race-type breakdown
 - RPM and Fuel dials that idle, sweep, and animate on a working **ignition button**
-- OIL / TEMP / BATT / BELT / BRAKE telltale lights that do a real bulb-check on startup, then settle into their resting state
+- OIL / TEMP / BATT telltale lights that do a real bulb-check on startup, then settle back down
+- BELT and BRAKE telltales that stay lit while the engine runs, the way a real cluster reports an actual condition rather than just a self-test
 
 ### 🗺️ Coverage
-A Race Type × Class grid, colour-coded by how many cars you have for each combination. Click any cell to see exactly which cars fill it.
+A Race Type × Class grid, colour-coded by how many cars you have for each combination — brighter means more cars. Click any cell to see exactly which cars fill it.
 
 ### 🏜️ Dirt Routes
-Static reference info on FH6's Horizon Open dirt/asphalt route mixes.
+Static reference info on FH6's Horizon Open dirt/asphalt route mixes, kept separate from the other tabs since it's reference material rather than something tied to your own garage.
 
 ### 🎡 Super Wheelspins
 A checklist of every Super Wheelspin-exclusive car, grouped by brand. Search, filter by Collected/Remaining, and use Check All / Uncheck All on the currently visible set.
@@ -54,10 +53,3 @@ This app stores everything in your browser's `localStorage` — there is no serv
 ## Tech
 
 Plain HTML, CSS, and vanilla JavaScript — no framework, no build tools, no dependencies to install. Car name/class suggestions are fetched live from the [Forza Wiki](https://forza.fandom.com/wiki/Forza_Horizon_6/Cars); everything else works fully offline.
-
-## Versioning
-
-The build tag next to the title (e.g. `v1.13f2`) tracks changes made to this file:
-- **Major** (`v1` → `v2`) — a significant rework
-- **Minor** (`v1.13` → `v1.14`) — a new feature or meaningful addition
-- **Fix** (`v1.13` → `v1.13f1` → `v1.13f2`) — bug fixes or cleanup with no new features; resets when the minor version bumps
