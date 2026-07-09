@@ -307,6 +307,8 @@
     background:var(--line); opacity:.8;
   }
   .tab-stage{position:relative; overflow:hidden;}
+  .tab-stage.suggestions-open,
+  .tab-stage.dropdown-open{overflow:visible;}
   .tab-panel{transform-origin:center top;}
   .tab-panel.panel-slide-out-left{animation:gaugeSlideOutLeft .24s cubic-bezier(.4,0,.8,.2) forwards;}
   .tab-panel.panel-slide-out-right{animation:gaugeSlideOutRight .24s cubic-bezier(.4,0,.8,.2) forwards;}
@@ -324,7 +326,7 @@
   .custom-select{
     position:relative; flex:0 0 auto; min-width:max-content;
   }
-  .custom-select.is-open{z-index:30;}
+  .custom-select.is-open{z-index:90;}
   .custom-select > select{
     position:absolute !important; width:1px !important; height:1px !important;
     min-width:0 !important; padding:0 !important; opacity:0; pointer-events:none;
@@ -346,7 +348,7 @@
     margin:3px 1px 0 3px; transform:rotate(225deg);
   }
   .custom-select-menu{
-    position:absolute; top:calc(100% + 5px); left:0; min-width:100%; z-index:31;
+    position:absolute; top:calc(100% + 5px); left:0; min-width:100%; z-index:91;
     background:#15171F; border:0.5px solid var(--line); border-radius:8px;
     box-shadow:0 14px 32px rgba(0,0,0,.42); padding:4px; max-height:260px; overflow-y:auto;
     scrollbar-width:thin; scrollbar-color:#555966 #15171F;
@@ -387,15 +389,15 @@
   /* ---------- add form ---------- */
   .addrow{
     display:flex; gap:8px; flex-wrap:wrap; background:var(--panel); border:0.5px solid var(--line);
-    border-radius:12px; padding:12px; margin-bottom:18px;
+    border-radius:12px; padding:12px; margin-bottom:18px; position:relative; z-index:5;
   }
   .name-field{position:relative; flex:2.4 1 260px; min-width:180px;}
   .name-field input{width:100%;}
   .suggestions{
-    position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:20;
+    position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:80;
     background:#11131A; border:0.5px solid var(--line); border-radius:8px;
     box-shadow:0 16px 34px rgba(0,0,0,.38); overflow:hidden;
-    max-height:252px; overflow-y:auto;
+    max-height:252px; overflow-y:auto; overscroll-behavior:contain;
   }
   .suggestions[hidden]{display:none;}
   .suggestion{
@@ -623,6 +625,19 @@
   .spin-filter button:hover{color:var(--hi); background:rgba(255,255,255,.035);}
   .spin-filter button.active{color:var(--hi); background:#292C35;}
   .spin-filter button:focus{outline:none;}
+  .spin-collapse-actions{
+    align-self:flex-end; display:inline-flex; gap:6px;
+  }
+  .spin-collapse-actions button{
+    border:0.5px solid var(--line); border-radius:7px; padding:6px 10px; background:#171922;
+    color:var(--lo); font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:600;
+    cursor:pointer; transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .spin-collapse-actions button:hover{
+    color:var(--hi); border-color:#3A3E4C; background:#222530;
+  }
+  .spin-collapse-actions button:focus{outline:none;}
+  .spin-collapse-actions button:focus-visible{outline:1.5px solid var(--cyan); outline-offset:1px;}
   .spin-bulk{
     align-self:flex-end; display:inline-flex; gap:6px;
   }
@@ -639,17 +654,45 @@
   .spin-group{
     width:100%;
     background:var(--panel); border:0.5px solid var(--line); border-radius:11px; overflow:hidden;
+    transition:border-color .18s ease, background .18s ease;
   }
   .spin-group-head{
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px;
     padding:11px 13px; background:var(--panel2); border-bottom:0.5px solid var(--line);
+    color:inherit; cursor:pointer; text-align:left;
+    transition:background .15s ease, border-color .15s ease;
   }
-  .spin-group h3{font-size:15px; color:var(--hi);}
+  .spin-group-head:hover{background:#222530;}
+  .spin-group-head:focus{outline:none;}
+  .spin-group-head:focus-visible{outline:1.5px solid var(--cyan); outline-offset:-2px;}
+  .spin-group-heading-main{min-width:0; display:flex; align-items:center; gap:8px;}
+  .spin-caret{
+    width:15px; height:15px; flex:none; display:inline-flex; align-items:center; justify-content:center;
+    color:var(--lo); transition:transform .28s cubic-bezier(.2,.8,.2,1), color .16s ease;
+  }
+  .spin-caret svg{width:13px; height:13px; display:block;}
+  .spin-group.is-collapsed .spin-caret{transform:rotate(-90deg);}
+  .spin-group-head:hover .spin-caret{color:var(--hi);}
+  .spin-group-title{
+    min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; color:var(--hi);
+  }
   .spin-group-count{
     flex:none; font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.05em;
     text-transform:uppercase; color:var(--lo);
   }
-  .spin-car-list{list-style:none;}
+  .spin-group.is-collapsed .spin-group-head{border-bottom-color:transparent;}
+  .spin-group-body{
+    display:grid; grid-template-rows:1fr; opacity:1; transform:translateY(0);
+    transition:
+      grid-template-rows .34s cubic-bezier(.2,.8,.2,1),
+      opacity .18s ease,
+      transform .28s cubic-bezier(.2,.8,.2,1);
+  }
+  .spin-group.is-collapsed .spin-group-body{
+    grid-template-rows:0fr; opacity:0; transform:translateY(-6px); pointer-events:none;
+  }
+  .spin-car-list{list-style:none; min-height:0; overflow:hidden;}
   .spin-car{
     display:grid; grid-template-columns:42px minmax(0,1fr) auto; align-items:center; gap:8px;
     padding:9px 13px; border-bottom:0.5px solid rgba(255,255,255,.05);
@@ -667,6 +710,19 @@
     font-size:12.5px; color:var(--hi); line-height:1.35;
   }
   .spin-car-tail{display:flex; align-items:center; justify-content:flex-end; gap:7px;}
+  .spin-perks{display:flex; align-items:center; justify-content:flex-end; gap:5px; flex-wrap:wrap;}
+  .spin-perk{
+    --perk-color:var(--cyan);
+    min-width:20px; height:18px; flex:none; display:inline-flex; align-items:center; justify-content:center;
+    border-radius:5px; padding:0 5px; font-family:'JetBrains Mono',monospace; font-size:8.5px; font-weight:700;
+    letter-spacing:.02em; line-height:1; background:rgba(45,226,214,.12); color:var(--cyan);
+    border:0.5px solid rgba(45,226,214,.28); box-shadow:none;
+  }
+  .spin-perk span{position:relative; z-index:1;}
+  .spin-perk.perk-super{background:rgba(255,182,39,.16); color:#FFD37A; border-color:rgba(255,182,39,.34);}
+  .spin-perk.perk-regular{background:rgba(54,184,255,.14); color:#8CD6FF; border-color:rgba(54,184,255,.34);}
+  .spin-perk.perk-regular3{background:rgba(40,104,255,.16); color:#ABC5FF; border-color:rgba(40,104,255,.36); font-size:8px;}
+  .spin-perk.perk-unlock{background:rgba(57,231,168,.13); color:#8DF5C8; border-color:rgba(57,231,168,.32);}
   .spin-tag{
     border-radius:5px; padding:2px 5px; font-family:'JetBrains Mono',monospace;
     font-size:8.5px; font-weight:700; letter-spacing:.04em;
@@ -689,11 +745,19 @@
     background:var(--panel); border:0.5px solid var(--line); border-radius:11px;
     color:var(--lo); font-size:13px;
   }
+  .spin-legend{
+    display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;
+    margin-top:12px; color:var(--lo); font-size:11px;
+  }
+  .spin-legend-item{display:inline-flex; align-items:center; gap:6px; white-space:nowrap;}
+  .spin-legend .spin-perk{height:18px; font-size:7px;}
 
   @media (prefers-reduced-motion:reduce){
     .gauge-card.is-switching .gauge-content,
     .gauge-card.is-switching .gauge-foot,
     .tab-panel{animation:none;}
+    .spin-group-body,
+    .spin-caret,
     .custom-select-menu,
     .custom-select-trigger::after{transition:none;}
   }
@@ -761,6 +825,10 @@
     .spin-tools{width:100%;}
     .spin-filter{align-self:stretch;}
     .spin-filter button{flex:1;}
+    .spin-collapse-actions{align-self:stretch;}
+    .spin-collapse-actions button{flex:1;}
+    .spin-bulk{align-self:stretch;}
+    .spin-bulk button{flex:1;}
     .spin-search{min-width:0;}
     .spin-groups{display:flex; flex-direction:column;}
     .spin-column{display:contents;}
@@ -907,7 +975,7 @@
   <div class="tabs">
     <button class="tab active" data-tab="garage">Garage</button>
     <button class="tab" data-tab="coverage">Coverage</button>
-    <button class="tab" data-tab="spins">Super Wheelspins</button>
+    <button class="tab" data-tab="spins">Spins &amp; Unlocks</button>
     <span class="tab-divider" aria-hidden="true"></span>
     <button class="tab" data-tab="dirt">Dirt Routes</button>
     <div class="share-icons-wrap">
@@ -994,7 +1062,7 @@
   <div class="tab-panel" id="panelSpins" style="display:none;">
     <section class="spin-intro" aria-labelledby="spinTitle">
       <div class="spin-intro-copy">
-        <h2 id="spinTitle">Super Wheelspin perk cars</h2>
+        <h2 id="spinTitle">Spins &amp; Unlocks</h2>
         <span class="spin-count" id="spinCount">0 cars</span>
       </div>
       <div class="spin-tools">
@@ -1003,20 +1071,25 @@
             <circle cx="11" cy="11" r="7"></circle>
             <path d="m20 20-4-4"></path>
           </svg>
-          <input class="spin-search" id="spinSearch" type="search" placeholder="Search year, make or model" aria-label="Search Super Wheelspin cars">
+          <input class="spin-search" id="spinSearch" type="search" placeholder="Search year, make, model or perk" aria-label="Search Spins and Unlocks cars">
         </div>
-        <div class="spin-filter" role="group" aria-label="Filter Super Wheelspin cars">
+        <div class="spin-filter" role="group" aria-label="Filter Spins and Unlocks cars">
           <button type="button" class="active" data-spin-filter="all" aria-pressed="true">All</button>
           <button type="button" data-spin-filter="collected" aria-pressed="false">Collected</button>
           <button type="button" data-spin-filter="remaining" aria-pressed="false">Remaining</button>
         </div>
-        <div class="spin-bulk" role="group" aria-label="Check or uncheck all visible Super Wheelspin cars">
+        <div class="spin-collapse-actions" role="group" aria-label="Expand or collapse all brand groups">
+          <button type="button" id="spinExpandAll">Expand all</button>
+          <button type="button" id="spinCollapseAll">Collapse all</button>
+        </div>
+        <div class="spin-bulk" role="group" aria-label="Check or uncheck all visible Spins and Unlocks cars">
           <button type="button" id="spinCheckAll">Check all</button>
           <button type="button" id="spinUncheckAll">Uncheck all</button>
         </div>
       </div>
     </section>
     <div class="spin-groups" id="spinGroups"></div>
+    <div class="spin-legend" id="spinLegend" aria-label="Spin and unlock legend"></div>
   </div>
   </div>
 
@@ -1257,43 +1330,206 @@ const SUPER_WHEELSPIN_GROUPS = [
     ]
   }
 ];
+const SPIN_PERK_META = {
+  super:{label:"Super Wheelspin", short:"S", className:"super"},
+  regular:{label:"Regular Wheelspin", short:"R", className:"regular"},
+  regular3:{label:"3x Regular Wheelspins", short:"3x", className:"regular3"},
+  unlock:{label:"Car Unlock", short:"CAR", className:"unlock"}
+};
+const SPIN_UNLOCK_CARS = [
+  ["1969 Toyota 2000GT", ["regular3","regular","super"]],
+
+  ["2019 Aston Martin Valhalla Concept Car", ["regular3","super"]],
+  ["2023 Aston Martin Valkyrie", ["regular3","super"]],
+  ["2013 Ferrari LaFerrari", ["regular3","super"]],
+  ["2020 Ferrari SF90 Stradale", ["regular3","super"]],
+  ["2020 Gordon Murray Automotive T.50", ["regular3","super"]],
+  ["2012 Hennessey Venom GT", ["regular3","super"]],
+  ["2021 Hennessey Venom F5", ["regular3","super"]],
+  ["2011 Koenigsegg Agera", ["regular3","super"]],
+  ["2015 Koenigsegg One:1", ["regular3","super"]],
+  ["2016 Koenigsegg Regera", ["regular3","super"]],
+  ["2017 Koenigsegg Agera RS", ["regular3","super"]],
+  ["2020 Koenigsegg Jesko", ["regular3","super"]],
+  ["2013 Lamborghini Veneno", ["regular3","super"]],
+  ["2016 Lamborghini Centenario LP 770-4", ["regular3","super"]],
+  ["2018 Lamborghini Aventador SVJ", ["regular3","super"]],
+  ["2020 Lamborghini Sian Roadster", ["regular3","super"]],
+  ["2021 Lamborghini Countach LPI 800-4", ["regular3","super"]],
+  ["2021 Lamborghini Aventador LP 780-4 Ultimae", ["regular3","super"]],
+  ["2024 Lamborghini Revuelto", ["regular3","super"]],
+  ["2020 Lotus Evija", ["regular3","super"]],
+  ["1991 Mazda #55 Mazda 787B", ["regular3","super"]],
+  ["2013 McLaren P1", ["regular3","super"]],
+  ["2019 McLaren Speedtail", ["regular3","super"]],
+  ["1983 Nissan #11 Tomica Skyline Turbo Super Silhouette", ["regular3","super"]],
+  ["1998 Nissan #23 Pennzoil NISMO Skyline GT-R", ["regular3","super"]],
+  ["2010 Pagani Zonda Cinque Roadster", ["regular3","super"]],
+  ["2016 Pagani Huayra BC Coupe", ["regular3","super"]],
+  ["2021 Rimac Nevera", ["regular3","super"]],
+  ["2019 Zenvo TSR-S", ["regular3","super"]],
+
+  ["1964 Aston Martin DB5", ["regular","super"]],
+  ["2023 BMW M2 Forza Edition", ["regular","super"]],
+  ["1962 Ferrari 250 GT Berlinetta Lusso", ["regular","super"]],
+  ["1969 Ferrari Dino 246 GT", ["regular","super"]],
+  ["1961 Jaguar E-type", ["regular","super"]],
+  ["1967 Lamborghini Miura P400", ["regular","super"]],
+  ["2010 Lexus LFA Forza Edition", ["regular","super"]],
+  ["2021 Mercedes-AMG One", ["regular","super"]],
+  ["1954 Mercedes-Benz 300 SL Coupe", ["regular","super"]],
+  ["1990 Mercedes-Benz 190 E 2.5-16 Evolution II Forza Edition", ["regular","super"]],
+  ["2005 Mitsubishi #1 Sierra Sierra Enterprises", ["regular","super"]],
+  ["1989 Nissan S-Cargo Forza Edition", ["regular","super"]],
+  ["2012 Nissan GT-R Black Edition (R35) Forza Edition", ["regular","super"]],
+  ["1970 Porsche #3 917 LH Forza Edition", ["regular","super"]],
+  ["1973 Porsche 911 Carrera RS", ["regular","super"]],
+  ["1994 Subaru Vivio RX-R Forza Edition", ["regular","super"]],
+  ["1985 Toyota Sprinter Trueno GT Apex Forza Edition", ["regular","super"]],
+  ["2019 Toyota Tacoma TRD Pro Forza Edition", ["regular","super"]],
+  ["1965 Shelby Cobra 427 S/C", ["regular","super"]],
+  ["2013 Wuling Sunshine S Forza Edition", ["regular","super"]],
+
+  ["1965 Alfa Romeo Giulia TZ2", ["super"]],
+  ["1968 Alfa Romeo 33 Stradale", ["super"]],
+  ["2554 AMG Transport Dynamics M12S Warthog CST", ["super"]],
+  ["2019 Apollo Intensa Emozione", ["super"]],
+  ["2016 Aston Martin Vulcan", ["super"]],
+  ["2017 Aston Martin Vulcan AMR Pro", ["super"]],
+  ["2022 Aston Martin Valkyrie AMR Pro", ["super"]],
+  ["1981 BMW M1", ["super"]],
+  ["1969 Dodge Charger R/T", ["super"]],
+  ["1999 Dodge Viper GTS ACR Forza Edition", ["super"]],
+  ["1962 Ferrari 250 GTO", ["super"]],
+  ["1967 Ferrari #24 Ferrari Spa 330 P4", ["super"]],
+  ["1970 Ferrari 512 S", ["super"]],
+  ["1989 Ferrari F40 Competizione", ["super"]],
+  ["1996 Ferrari F50 GT", ["super"]],
+  ["2005 Ferrari FXX", ["super"]],
+  ["2010 Ferrari 599XX", ["super"]],
+  ["2012 Ferrari 599XX Evolution", ["super"]],
+  ["2014 Ferrari FXX K", ["super"]],
+  ["2017 Ferrari 812 Superfast", ["super"]],
+  ["2018 Ferrari FXX-K Evo", ["super"]],
+  ["2018 Ferrari FXX-K Evo Welcome Pack", ["super"]],
+  ["2019 Ferrari Monza SP2", ["super"]],
+  ["1966 Ford #2 GT40 Mk II", ["super"]],
+  ["1968 Ford Mustang GT 2+2 Fastback Forza Edition", ["super"]],
+  ["1986 Ford F-150 XLT Lariat Forza Edition", ["super"]],
+  ["1987 Ford Sierra Cosworth RS500", ["super"]],
+  ["2005 Ford GT", ["super"]],
+  ["2025 GR GT Prototype", ["super"]],
+  ["2005 Honda NSX-R GT", ["super"]],
+  ["1956 Jaguar D-Type", ["super"]],
+  ["1964 Jaguar Lightweight E-Type", ["super"]],
+  ["2008 Koenigsegg CCGT", ["super"]],
+  ["1997 Lamborghini Diablo SV", ["super"]],
+  ["2011 Lamborghini Sesto Elemento", ["super"]],
+  ["2020 Lamborghini Essenza SCV12", ["super"]],
+  ["2020 Lamborghini Huracan STO", ["super"]],
+  ["1974 Lancia Stratos HF Stradale", ["super"]],
+  ["2020 Lotus Evija Forza Edition", ["super"]],
+  ["2008 Maserati MC12 Versione Corsa", ["super"]],
+  ["1973 Mazda RX-3 Forza Edition", ["super"]],
+  ["1974 Mazda #123 Mad Mike 808 Wagon 'FURSTY'", ["super"]],
+  ["1985 Mazda RX-7 GSL-SE", ["super"]],
+  ["1994 Mazda MX-5 Miata Forza Edition", ["super"]],
+  ["2008 Mazda Furai", ["super"]],
+  ["2020 Mercedes-AMG GT Black Series Welcome Pack", ["super"]],
+  ["1955 Mercedes-Benz 300 SLR", ["super"]],
+  ["1995 Mitsubishi Lancer Evolution III GSR", ["super"]],
+  ["1989 Nissan Pao", ["super"]],
+  ["1990 Nissan #12 Skyline GT-R (BNR32 Gr.A) JTC", ["super"]],
+  ["1991 Nissan Figaro", ["super"]],
+  ["1998 Nissan R390 (GT1)", ["super"]],
+  ["2009 Pagani Zonda R", ["super"]],
+  ["2021 Pagani Huayra R", ["super"]],
+  ["1984 Peugeot 205 Turbo 16", ["super"]],
+  ["1970 Porsche #3 917 LH", ["super"]],
+  ["1982 Porsche 911 Turbo 3.3", ["super"]],
+  ["1987 Porsche 959", ["super"]],
+  ["2019 Porsche #70 Porsche Motorsport 935", ["super"]],
+  ["2022 Porsche Mission R", ["super"]],
+  ["1965 Shelby Cobra Daytona Coupe", ["super"]],
+  ["1998 Subaru Impreza 22B-STi Version", ["super"]],
+  ["2022 Subaru BRZ Forza Edition", ["super"]],
+  ["1993 Toyota #1 T100 Baja Truck", ["super"]],
+  ["2013 Toyota 86 Stories", ["super"]],
+
+  ["2024 Koenigsegg Gemera", ["regular3"]],
+  ["2012 Lamborghini Aventador LP700-4", ["regular3"]],
+  ["1962 Lincoln Continental", ["regular3"]],
+  ["2021 McLaren Sabre", ["regular3"]],
+  ["1971 Nissan Skyline 2000GT-R", ["regular3"]],
+
+  ["1965 Alfa Romeo Giulia Sprint GTA Stradale", ["regular"]],
+  ["1986 Audi #2 Audi Sport quattro S1", ["regular"]],
+  ["1985 Ford RS200 Evolution", ["regular"]],
+  ["2001 Ford #4 Ford Focus RS", ["regular"]],
+  ["2017 Ford #14 Rahal Letterman Lanigan Racing Fiesta", ["regular"]],
+  ["2017 Ford M-Sport Fiesta RS", ["regular"]],
+  ["2023 Lamborghini Huracan Sterrato", ["regular"]],
+  ["1986 MG Metro 6R4", ["regular"]],
+  ["1984 Opel Manta 400", ["regular"]],
+  ["2007 Peugeot 207 Super 2000", ["regular"]],
+  ["1985 Porsche #185 959 Prodrive Rally Raid", ["regular"]],
+  ["2023 Porsche 911 Rallye", ["regular"]],
+  ["2018 Subaru WRX STI ARX Supercar", ["regular"]],
+  ["2017 Volkswagen #34 Andretti Rally Cross Beetle", ["regular"]],
+
+  ["2014 Porsche 918 Spyder", ["unlock","regular3"]],
+
+  ["2020 Chevrolet Corvette Stingray Coupe", ["unlock"]],
+  ["1995 Ferrari F50", ["unlock"]],
+  ["1994 Ford Supervan 3", ["unlock"]],
+  ["2023 Honda Civic Type R", ["unlock"]]
+].map(([name, perks]) => ({name, perks}));
 const SUPER_WHEELSPIN_BRAND_RULES = [
   ["Alfa Romeo","Alfa Romeo"],
   ["AMG Transport Dynamics","AMG Transport Dynamics"],
   ["Apollo","Apollo"],
   ["Aston Martin","Aston Martin"],
+  ["Audi","Audi"],
   ["BMW","BMW"],
+  ["Chevrolet","Chevrolet"],
   ["Dodge","Dodge"],
   ["Ferrari","Ferrari"],
   ["Ford","Ford"],
   ["Gordon Murray Automotive","Gordon Murray Automotive"],
   ["GR","GR"],
   ["Hennessey","Hennessey"],
+  ["Honda","Honda"],
   ["Jaguar","Jaguar"],
   ["Koenigsegg","Koenigsegg"],
   ["Lamborghini","Lamborghini"],
   ["Lancia","Lancia"],
   ["Lexus","Lexus"],
+  ["Lincoln","Lincoln"],
   ["Lotus","Lotus"],
   ["Maserati","Maserati"],
   ["Mazda","Mazda"],
   ["McLaren","McLaren"],
   ["Mercedes-AMG","Mercedes-AMG"],
   ["Mercedes-Benz","Mercedes-Benz"],
+  ["MG","MG"],
   ["Mitsubishi","Mitsubishi"],
   ["Nissan","Nissan"],
+  ["Opel","Opel"],
   ["Pagani","Pagani"],
   ["Peugeot","Peugeot"],
   ["Porsche","Porsche"],
   ["Rimac","Rimac"],
+  ["Shelby","Shelby"],
   ["Cobra Shelby","Shelby"],
   ["Subaru","Subaru"],
   ["Toyota","Toyota"],
+  ["Volkswagen","Volkswagen"],
   ["Wuling","Wuling"],
   ["Zenvo","Zenvo"]
 ];
 const STORE_KEY = "fh6-garage-cars";
 const WHEELSPIN_OWNED_KEY = "fh6-super-wheelspin-owned";
+const SPIN_COLLAPSED_KEY = "fh6-spins-unlocks-collapsed-brands";
 const SHARE_SETUP_VERSION = 2;
 const FH6_CAR_API_URL = "https://forza.fandom.com/api.php?action=parse&page=Forza_Horizon_6/Cars&prop=wikitext&format=json&origin=*";
 const X_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>`;
@@ -1303,6 +1539,7 @@ const CHECK_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
 let cars = [];
 let editingCarId = null;
 let ownedWheelspinCars = new Set();
+let collapsedSpinBrands = new Set();
 let wheelspinCollectionFilter = "all";
 let filterRace = "";
 let filterClass = "";
@@ -1405,6 +1642,58 @@ function saveOwnedWheelspinCars(){
   catch(error){ console.error("storage error", error); }
 }
 
+function loadCollapsedSpinBrands(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(SPIN_COLLAPSED_KEY) || "[]");
+    collapsedSpinBrands = new Set(Array.isArray(stored) ? stored.filter(item=>typeof item === "string") : []);
+  }catch(error){
+    collapsedSpinBrands = new Set();
+  }
+}
+
+function saveCollapsedSpinBrands(){
+  try{ localStorage.setItem(SPIN_COLLAPSED_KEY, JSON.stringify([...collapsedSpinBrands])); }
+  catch(error){ console.error("storage error", error); }
+}
+
+function applySpinGroupCollapseState(section, brand, collapsed){
+  if(!section) return;
+  section.classList.toggle("is-collapsed", collapsed);
+  const heading = section.querySelector(".spin-group-head");
+  const body = section.querySelector(".spin-group-body");
+  if(heading){
+    heading.setAttribute("aria-expanded", String(!collapsed));
+    heading.setAttribute("aria-label", `${collapsed ? "Expand" : "Collapse"} ${brand}`);
+  }
+  if(body) body.setAttribute("aria-hidden", String(collapsed));
+}
+
+function findRenderedSpinGroup(brand){
+  return [...document.querySelectorAll(".spin-group")]
+    .find(section => section.querySelector(".spin-group-title")?.textContent.trim() === brand);
+}
+
+function toggleSpinBrandCollapsed(brand){
+  if(collapsedSpinBrands.has(brand)) collapsedSpinBrands.delete(brand);
+  else collapsedSpinBrands.add(brand);
+  saveCollapsedSpinBrands();
+  const collapsed = collapsedSpinBrands.has(brand);
+  const section = findRenderedSpinGroup(brand);
+  if(section) applySpinGroupCollapseState(section, brand, collapsed);
+  else renderSuperWheelspinCars();
+}
+
+function setAllSpinBrandsCollapsed(collapsed){
+  const {brandGroups} = getFilteredWheelspinGroups();
+  if(collapsed) brandGroups.forEach(group => collapsedSpinBrands.add(group.title));
+  else brandGroups.forEach(group => collapsedSpinBrands.delete(group.title));
+  saveCollapsedSpinBrands();
+  document.querySelectorAll(".spin-group").forEach(section => {
+    const brand = section.querySelector(".spin-group-title")?.textContent.trim();
+    if(brand) applySpinGroupCollapseState(section, brand, collapsed);
+  });
+}
+
 function toggleOwnedWheelspinCar(car){
   if(ownedWheelspinCars.has(car)) ownedWheelspinCars.delete(car);
   else ownedWheelspinCars.add(car);
@@ -1412,7 +1701,7 @@ function toggleOwnedWheelspinCar(car){
   renderSuperWheelspinCars();
 }
 
-// Single source of truth for "which Super Wheelspin cars currently match the
+// Single source of truth for "which Spins & Unlocks cars currently match the
 // search box + Collected/Remaining filter". Both the on-screen list and the
 // Check all / Uncheck all buttons call this same function, so they can never
 // silently drift apart the way two separately-hand-written copies of this
@@ -1425,8 +1714,9 @@ function getFilteredWheelspinGroups(){
     .map(group => {
       const groupMatches = group.title.toLowerCase().includes(query);
       const cars = group.cars.filter(car => {
-        const matchesSearch = !query || groupMatches || car.toLowerCase().includes(query);
-        const isCollected = ownedWheelspinCars.has(car);
+        const carName = spinCarName(car);
+        const matchesSearch = !query || groupMatches || spinCarSearchText(car).includes(query);
+        const isCollected = ownedWheelspinCars.has(carName);
         const matchesCollection =
           wheelspinCollectionFilter === "all" ||
           (wheelspinCollectionFilter === "collected" && isCollected) ||
@@ -1442,7 +1732,7 @@ function getFilteredWheelspinGroups(){
 function getVisibleSuperWheelspinCarNames(){
   const {filteredGroups} = getFilteredWheelspinGroups();
   const names = [];
-  filteredGroups.forEach(group => group.cars.forEach(car => names.push(car)));
+  filteredGroups.forEach(group => group.cars.forEach(car => names.push(spinCarName(car))));
   return names;
 }
 
@@ -1480,8 +1770,7 @@ function createSetupFilePayload(){
       cls:String(car.cls || ""),
       race:String(car.race || ""),
       note:String(car.note || "")
-    })),
-    ownedWheelspin:[...ownedWheelspinCars]
+    }))
   };
 }
 
@@ -1516,7 +1805,6 @@ async function importSetupFile(){
     const payload = JSON.parse(contents);
     if(payload.format && payload.format !== "fh6-setup") throw new Error("invalid setup file");
     const importedCars = normalizeSharedSetup(payload);
-    const importedOwnedWheelspin = normalizeOwnedWheelspin(payload.ownedWheelspin);
 
     leaveCarEditMode(false);
     cars = importedCars;
@@ -1531,17 +1819,6 @@ async function importSetupFile(){
     save();
     renderAll();
     setShareStatus("Setup file imported.", "success");
-
-    // The garage itself is always replaced above. Super Wheelspin progress is
-    // account-specific, so it's only ever touched if the person says yes here --
-    // and if this file has none to offer, we don't even ask.
-    if(importedOwnedWheelspin.length){
-      pendingWheelspinImport = importedOwnedWheelspin;
-      const count = importedOwnedWheelspin.length;
-      document.getElementById("wheelspinImportSub").textContent =
-        `This setup file also includes ${count} checked Super Wheelspin car${count === 1 ? "" : "s"}.`;
-      document.getElementById("wheelspinImportOverlay").classList.add("show");
-    }
   }catch(error){
     setShareStatus("Invalid setup file.", "error");
   }
@@ -1657,12 +1934,18 @@ function fillSelect(sel, opts, withAll, allLabel){
   opts.forEach(v=>{ const o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o); });
 }
 
+function refreshCustomSelectLayer(){
+  const hasOpenSelect = Boolean(document.querySelector(".custom-select.is-open"));
+  document.querySelector(".tab-stage")?.classList.toggle("dropdown-open", hasOpenSelect);
+}
+
 function closeCustomSelects(except){
   document.querySelectorAll(".custom-select.is-open").forEach(wrapper=>{
     if(wrapper === except) return;
     wrapper.classList.remove("is-open");
     wrapper.querySelector(".custom-select-trigger").setAttribute("aria-expanded", "false");
   });
+  refreshCustomSelectLayer();
 }
 
 function syncCustomSelect(select){
@@ -1724,11 +2007,13 @@ function enhanceSelect(select){
     closeCustomSelects(wrapper);
     wrapper.classList.toggle("is-open", willOpen);
     trigger.setAttribute("aria-expanded", String(willOpen));
+    refreshCustomSelectLayer();
   };
   trigger.onkeydown = (event)=>{
     if(event.key === "Escape"){
       wrapper.classList.remove("is-open");
       trigger.setAttribute("aria-expanded", "false");
+      refreshCustomSelectLayer();
       return;
     }
     if((event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") && !wrapper.classList.contains("is-open")){
@@ -1789,6 +2074,10 @@ async function fillCarSuggestions(){
   }
 }
 
+function setCarSuggestionsLayerOpen(isOpen){
+  document.querySelector(".tab-stage")?.classList.toggle("suggestions-open", Boolean(isOpen));
+}
+
 function renderCarSuggestions(){
   const panel = document.getElementById("carSuggestions");
   const input = document.getElementById("newName");
@@ -1799,6 +2088,7 @@ function renderCarSuggestions(){
     activeSuggestionIndex = -1;
     panel.replaceChildren();
     panel.hidden = true;
+    setCarSuggestionsLayerOpen(false);
     input.setAttribute("aria-expanded", "false");
     return;
   }
@@ -1827,8 +2117,10 @@ function renderCarSuggestions(){
     frag.appendChild(button);
   });
   panel.replaceChildren(frag);
-  panel.hidden = currentSuggestions.length === 0;
-  input.setAttribute("aria-expanded", currentSuggestions.length ? "true" : "false");
+  const hasSuggestions = currentSuggestions.length > 0;
+  panel.hidden = !hasSuggestions;
+  setCarSuggestionsLayerOpen(hasSuggestions);
+  input.setAttribute("aria-expanded", hasSuggestions ? "true" : "false");
 }
 
 function hideCarSuggestions(){
@@ -1840,6 +2132,7 @@ function hideCarSuggestions(){
     panel.replaceChildren();
     panel.hidden = true;
   }
+  setCarSuggestionsLayerOpen(false);
   if(input) input.setAttribute("aria-expanded", "false");
 }
 
@@ -2283,7 +2576,23 @@ function renderDirtRoutes(){
   list.appendChild(fragment);
 }
 
+function spinCarName(car){
+  return typeof car === "string" ? car : car.name;
+}
+
+function spinCarPerks(car){
+  return Array.isArray(car?.perks) ? car.perks : ["super"];
+}
+
+function spinCarSearchText(car){
+  return [
+    spinCarName(car),
+    ...spinCarPerks(car).map(perk => SPIN_PERK_META[perk]?.label || perk)
+  ].join(" ").toLowerCase();
+}
+
 function superWheelspinBrandName(car){
+  car = spinCarName(car);
   const nameWithoutYear = car.replace(/^\d{4}\s+/, "");
   const rule = SUPER_WHEELSPIN_BRAND_RULES.find(([prefix]) =>
     nameWithoutYear === prefix || nameWithoutYear.startsWith(prefix + " ")
@@ -2292,26 +2601,61 @@ function superWheelspinBrandName(car){
 }
 
 function superWheelspinYear(car){
+  car = spinCarName(car);
   const match = car.match(/^(\d{4})/);
   return match ? Number(match[1]) : 0;
 }
 
 function getSuperWheelspinBrandGroups(){
   const byBrand = new Map();
-  SUPER_WHEELSPIN_GROUPS.forEach(sourceGroup => {
-    sourceGroup.cars.forEach(car => {
-      const brand = superWheelspinBrandName(car);
-      if(!byBrand.has(brand)) byBrand.set(brand, []);
-      byBrand.get(brand).push(car);
-    });
+  SPIN_UNLOCK_CARS.forEach(car => {
+    const brand = superWheelspinBrandName(car);
+    if(!byBrand.has(brand)) byBrand.set(brand, []);
+    byBrand.get(brand).push(car);
   });
 
   return [...byBrand.entries()]
     .map(([title, cars]) => ({
       title,
-      cars: cars.sort((a,b) => superWheelspinYear(a) - superWheelspinYear(b) || a.localeCompare(b))
+      cars: cars.sort((a,b) => superWheelspinYear(a) - superWheelspinYear(b) || spinCarName(a).localeCompare(spinCarName(b)))
     }))
     .sort((a,b) => a.title.localeCompare(b.title));
+}
+
+function createSpinPerkIcon(perk){
+  const meta = SPIN_PERK_META[perk] || {label:perk, short:"?", className:"regular"};
+  const icon = document.createElement("span");
+  icon.className = "spin-perk perk-" + meta.className;
+  icon.title = meta.label;
+  icon.setAttribute("aria-label", meta.label);
+  icon.innerHTML = `<span>${meta.short}</span>`;
+  return icon;
+}
+
+function renderSpinLegend(){
+  const legend = document.getElementById("spinLegend");
+  if(!legend) return;
+  legend.innerHTML = "";
+  ["super","regular","regular3","unlock"].forEach(perk => {
+    const meta = SPIN_PERK_META[perk];
+    const item = document.createElement("span");
+    item.className = "spin-legend-item";
+    item.appendChild(createSpinPerkIcon(perk));
+    item.appendChild(document.createTextNode(meta.label));
+    legend.appendChild(item);
+  });
+}
+
+function splitSpinGroupsIntoBalancedColumns(groups){
+  const columns = [[], []];
+  const weights = [0, 0];
+  groups.forEach(group => {
+    const groupWeight = 1 + group.cars.length;
+    const targetColumn = weights[0] <= weights[1] ? 0 : 1;
+    columns[targetColumn].push(group);
+    weights[targetColumn] += groupWeight;
+  });
+  return columns;
 }
 
 function renderSuperWheelspinCars(){
@@ -2320,7 +2664,7 @@ function renderSuperWheelspinCars(){
   const visibleCount = filteredGroups.reduce((sum, group) => sum + group.cars.length, 0);
   const totalCount = brandGroups.reduce((sum, group) => sum + group.cars.length, 0);
   const ownedCount = brandGroups.reduce(
-    (sum, group) => sum + group.cars.filter(car=>ownedWheelspinCars.has(car)).length,
+    (sum, group) => sum + group.cars.filter(car=>ownedWheelspinCars.has(spinCarName(car))).length,
     0
   );
 
@@ -2333,35 +2677,63 @@ function renderSuperWheelspinCars(){
     ? `${visibleCount} of ${totalCount} cars | ${ownedCount} collected`
     : `${totalCount} cars | ${ownedCount} collected`;
   list.innerHTML = "";
+  renderSpinLegend();
 
   if(visibleCount === 0){
     const empty = document.createElement("div");
     empty.className = "spin-empty";
-    empty.textContent = "No Super Wheelspin cars match the current filters.";
+    empty.textContent = "No Spins & Unlocks cars match the current filters.";
     list.appendChild(empty);
     return;
   }
 
   const fragment = document.createDocumentFragment();
-  const leftColumn = document.createElement("div");
-  const rightColumn = document.createElement("div");
-  leftColumn.className = "spin-column";
-  rightColumn.className = "spin-column";
+  const columns = splitSpinGroupsIntoBalancedColumns(filteredGroups);
 
-  filteredGroups.forEach((group, groupIndex) => {
+  columns.forEach((groups, columnIndex) => {
+    const column = document.createElement("div");
+    column.className = "spin-column";
+
+    groups.forEach(group => {
+    const groupIndex = filteredGroups.indexOf(group);
+    const isCollapsed = collapsedSpinBrands.has(group.title);
     const section = document.createElement("section");
     section.className = "spin-group";
+    if(isCollapsed) section.classList.add("is-collapsed");
     section.style.setProperty("--brand-order", groupIndex);
-    const heading = document.createElement("div");
+    const heading = document.createElement("button");
+    heading.type = "button";
     heading.className = "spin-group-head";
-    heading.innerHTML = `
-      <h3>${group.title}</h3>
-      <span class="spin-group-count">${group.cars.length} ${group.cars.length === 1 ? "car" : "cars"}</span>
-    `;
+    heading.setAttribute("aria-expanded", String(!isCollapsed));
+    heading.setAttribute("aria-label", `${isCollapsed ? "Expand" : "Collapse"} ${group.title}`);
+    heading.onclick = ()=>toggleSpinBrandCollapsed(group.title);
+
+    const headingMain = document.createElement("span");
+    headingMain.className = "spin-group-heading-main";
+    const caret = document.createElement("span");
+    caret.className = "spin-caret";
+    caret.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 4 4 4-4"></path></svg>`;
+    const title = document.createElement("span");
+    title.className = "spin-group-title";
+    title.textContent = group.title;
+    headingMain.appendChild(caret);
+    headingMain.appendChild(title);
+
+    const count = document.createElement("span");
+    count.className = "spin-group-count";
+    count.textContent = `${group.cars.length} ${group.cars.length === 1 ? "car" : "cars"}`;
+    heading.appendChild(headingMain);
+    heading.appendChild(count);
+
     const carList = document.createElement("ul");
     carList.className = "spin-car-list";
+    const carBody = document.createElement("div");
+    carBody.className = "spin-group-body";
+    carBody.setAttribute("aria-hidden", String(isCollapsed));
 
-    group.cars.forEach(car => {
+    group.cars.forEach(carInfo => {
+      const car = spinCarName(carInfo);
+      const perks = spinCarPerks(carInfo);
       const match = car.match(/^(\d{4})\s+(.+)$/);
       const year = match ? match[1] : "";
       const fullModel = match ? match[2] : car;
@@ -2380,9 +2752,14 @@ function renderSuperWheelspinCars(){
       const modelLabel = document.createElement("span");
       modelLabel.className = "spin-model";
       modelLabel.textContent = model;
-      modelLabel.title = fullModel;
+      modelLabel.title = fullModel + " — " + perks.map(perk => SPIN_PERK_META[perk]?.label || perk).join(", ");
       const tail = document.createElement("span");
       tail.className = "spin-car-tail";
+
+      const perkList = document.createElement("span");
+      perkList.className = "spin-perks";
+      perks.forEach(perk => perkList.appendChild(createSpinPerkIcon(perk)));
+      tail.appendChild(perkList);
 
       if(isForzaEdition || isWelcomePack){
         const tag = document.createElement("span");
@@ -2409,11 +2786,12 @@ function renderSuperWheelspinCars(){
     });
 
     section.appendChild(heading);
-    section.appendChild(carList);
-    (groupIndex % 2 === 0 ? leftColumn : rightColumn).appendChild(section);
+    carBody.appendChild(carList);
+    section.appendChild(carBody);
+    column.appendChild(section);
+    });
+    fragment.appendChild(column);
   });
-  fragment.appendChild(leftColumn);
-  fragment.appendChild(rightColumn);
   list.appendChild(fragment);
 }
 
@@ -2435,6 +2813,8 @@ function openModal(race, cls, matches){
 }
 
 function switchTabWithSlide(targetButton){
+  hideCarSuggestions();
+  closeCustomSelects();
   const targetTab = targetButton.dataset.tab;
   const currentTab = tabVisualState;
   const currentPanel = document.getElementById(TAB_PANEL_IDS[currentTab]);
@@ -2508,6 +2888,8 @@ document.querySelectorAll("[data-spin-filter]").forEach(button => {
 });
 document.getElementById("spinCheckAll").onclick = checkAllVisibleWheelspinCars;
 document.getElementById("spinUncheckAll").onclick = uncheckAllVisibleWheelspinCars;
+document.getElementById("spinExpandAll").onclick = ()=>setAllSpinBrandsCollapsed(false);
+document.getElementById("spinCollapseAll").onclick = ()=>setAllSpinBrandsCollapsed(true);
 
 // ---------------------------------------------------------------------
 // Ignition button — purely a fun, decorative startup sequence for the
@@ -2730,6 +3112,7 @@ fillCarSuggestions();
 syncNameClearButton();
 
 loadOwnedWheelspinCars();
+loadCollapsedSpinBrands();
 // Dirt Routes is pure static reference content (surface mixes never change
 // at runtime) -- render it once here rather than on every renderAll(), which
 // fires on every unrelated garage-car add/edit/delete/import.
