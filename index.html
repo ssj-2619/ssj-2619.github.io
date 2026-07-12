@@ -309,6 +309,12 @@
   .tab-stage{position:relative; overflow:hidden;}
   .tab-stage.suggestions-open,
   .tab-stage.dropdown-open{overflow:visible;}
+  /* The slide-transition between tabs needs overflow:hidden to clip the
+     horizontal animation -- but that same clipping breaks position:sticky
+     on the Spins legend sidebar, since sticky requires an unbroken chain of
+     non-clipping ancestors. Once settled on the Spins tab (no transition in
+     progress), this override lets the sidebar actually stick while scrolling. */
+  .tab-stage.spins-settled{overflow:visible;}
   .tab-panel{transform-origin:center top;}
   .tab-panel.panel-slide-out-left{animation:gaugeSlideOutLeft .24s cubic-bezier(.4,0,.8,.2) forwards;}
   .tab-panel.panel-slide-out-right{animation:gaugeSlideOutRight .24s cubic-bezier(.4,0,.8,.2) forwards;}
@@ -350,7 +356,7 @@
   .custom-select-menu{
     position:absolute; top:calc(100% + 5px); left:0; min-width:100%; z-index:91;
     background:#15171F; border:0.5px solid var(--line); border-radius:8px;
-    box-shadow:0 14px 32px rgba(0,0,0,.42); padding:4px; max-height:260px; overflow-y:auto;
+    box-shadow:0 14px 32px rgba(0,0,0,.42); padding:4px; max-height:340px; overflow-y:auto;
     scrollbar-width:thin; scrollbar-color:#555966 #15171F;
     opacity:0; visibility:hidden; pointer-events:none; transform:translateY(-7px) scale(.98);
     transform-origin:top center;
@@ -430,6 +436,7 @@
   #newRace{flex:0 0 132px; min-width:132px;}
   #newNote{flex:1.6 1 180px;}
   .addrow input{
+    height:36px; box-sizing:border-box;
     background:var(--panel2); color:var(--hi); border:0.5px solid var(--line); border-radius:8px;
     padding:8px 10px; font-family:'Inter',sans-serif; font-size:13px;
   }
@@ -587,9 +594,12 @@
 
   /* ---------- super wheelspin cars ---------- */
   .spin-intro{
-    display:flex; align-items:center; justify-content:space-between; gap:18px;
+    display:flex; flex-direction:column; gap:14px;
     background:var(--panel); border:0.5px solid var(--line); border-radius:14px;
     padding:18px; margin-bottom:14px;
+  }
+  .spin-intro-top{
+    display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap;
   }
   .spin-intro-copy{min-width:0;}
   .spin-intro h2{font-size:21px; line-height:1.1;}
@@ -625,31 +635,33 @@
   .spin-filter button:hover{color:var(--hi); background:rgba(255,255,255,.035);}
   .spin-filter button.active{color:var(--hi); background:#292C35;}
   .spin-filter button:focus{outline:none;}
-  .spin-collapse-actions{
-    align-self:flex-end; display:inline-flex; gap:6px;
+  .spin-actions-row{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding-top:14px; border-top:0.5px solid var(--line);
   }
-  .spin-collapse-actions button{
-    border:0.5px solid var(--line); border-radius:7px; padding:6px 10px; background:#171922;
-    color:var(--lo); font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:600;
-    cursor:pointer; transition:background .15s ease, color .15s ease, border-color .15s ease;
-  }
-  .spin-collapse-actions button:hover{
-    color:var(--hi); border-color:#3A3E4C; background:#222530;
-  }
-  .spin-collapse-actions button:focus{outline:none;}
-  .spin-collapse-actions button:focus-visible{outline:1.5px solid var(--cyan); outline-offset:1px;}
-  .spin-bulk{
-    align-self:flex-end; display:inline-flex; gap:6px;
-  }
-  .spin-bulk button{
+  .spin-collapse-actions, .spin-bulk{display:inline-flex; gap:6px;}
+  .spin-collapse-actions button, .spin-bulk button{
     border:0.5px solid var(--line); border-radius:7px; padding:6px 10px; background:var(--panel2);
     color:var(--lo); font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:600;
     cursor:pointer; transition:background .15s ease, color .15s ease, border-color .15s ease;
   }
-  .spin-bulk button:hover{color:var(--amber); border-color:rgba(255,182,39,.4); background:rgba(255,182,39,.1);}
-  .spin-bulk button:focus{outline:none;}
-  .spin-bulk button:focus-visible{outline:1.5px solid var(--amber); outline-offset:1px;}
-  .spin-groups{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
+  .spin-collapse-actions button:hover, .spin-bulk button:hover{
+    color:var(--amber); border-color:rgba(255,182,39,.4); background:rgba(255,182,39,.1);
+  }
+  .spin-collapse-actions button:focus, .spin-bulk button:focus{outline:none;}
+  .spin-collapse-actions button:focus-visible, .spin-bulk button:focus-visible{
+    outline:1.5px solid var(--amber); outline-offset:1px;
+  }
+  .spin-body{display:flex; align-items:flex-start; gap:14px;}
+  /* On genuinely wide viewports, let the legend sit OUTSIDE the shell's own
+     920px content width instead of sharing/shrinking it -- this keeps the
+     car-table area exactly as wide as it was before the sidebar existed,
+     with the legend as pure extra width to its left, rather than the whole
+     page effectively getting more cramped to make room for it. */
+  @media (min-width:1200px){
+    .spin-body{width:calc(100% + 146px); margin-left:-146px;}
+  }
+  .spin-groups{flex:1; min-width:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
   .spin-column{display:flex; flex-direction:column; gap:10px;}
   .spin-group{
     width:100%;
@@ -662,7 +674,7 @@
     color:inherit; cursor:pointer; text-align:left;
     transition:background .15s ease, border-color .15s ease;
   }
-  .spin-group-head:hover{background:#222530;}
+  .spin-group-head:hover{background:#242732;}
   .spin-group-head:focus{outline:none;}
   .spin-group-head:focus-visible{outline:1.5px solid var(--cyan); outline-offset:-2px;}
   .spin-group-heading-main{min-width:0; display:flex; align-items:center; gap:8px;}
@@ -701,13 +713,28 @@
   .spin-car:last-child{border-bottom:none;}
   .spin-car.owned{background:rgba(57,231,168,.045);}
   .spin-car.owned .spin-year{color:#729B8B;}
-  .spin-car.owned .spin-model{color:#77837E; text-decoration:line-through; text-decoration-thickness:1px;}
+  .spin-car.owned .spin-model-text{color:#77837E; text-decoration:line-through; text-decoration-thickness:1px;}
   .spin-year{
     font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:600; color:var(--amber);
   }
   .spin-model{
-    min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    display:flex; align-items:center; gap:6px; min-width:0;
     font-size:12.5px; color:var(--hi); line-height:1.35;
+  }
+  .spin-model-text{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .spin-edition{
+    flex:none; display:inline-flex; align-items:center; height:15px; padding:0 6px;
+    border-radius:4px; font-family:'Rajdhani',sans-serif; font-size:9.5px; font-weight:700;
+    letter-spacing:.04em; text-transform:uppercase; color:#fff; white-space:nowrap;
+    text-shadow:0 1px 1px rgba(0,0,0,.35);
+  }
+  .spin-edition.fe{
+    background:linear-gradient(115deg, #7A2FD6 0%, #9C3FE0 35%, #3E6BF0 100%);
+    box-shadow:0 0 0 0.5px rgba(196,150,255,.4), 0 1px 4px rgba(122,47,214,.35);
+  }
+  .spin-edition.wp{
+    background:linear-gradient(115deg, #0E8F9E 0%, #12B4C4 40%, #2DE2D6 100%);
+    box-shadow:0 0 0 0.5px rgba(93,230,224,.4), 0 1px 4px rgba(18,180,196,.35);
   }
   .spin-car-tail{display:flex; align-items:center; justify-content:flex-end; gap:7px;}
   .spin-perks{display:flex; align-items:center; justify-content:flex-end; gap:5px; flex-wrap:wrap;}
@@ -721,17 +748,11 @@
   .spin-perk span{position:relative; z-index:1;}
   .spin-perk.perk-super{background:rgba(255,182,39,.16); color:#FFD37A; border-color:rgba(255,182,39,.34);}
   .spin-perk.perk-regular{background:rgba(54,184,255,.14); color:#8CD6FF; border-color:rgba(54,184,255,.34);}
-  .spin-perk.perk-regular3{background:rgba(40,104,255,.16); color:#ABC5FF; border-color:rgba(40,104,255,.36); font-size:8px;}
+  .spin-perk.perk-regular3{background:rgba(40,104,255,.16); color:#ABC5FF; border-color:rgba(40,104,255,.36);}
   .spin-perk.perk-unlock{background:rgba(57,231,168,.13); color:#8DF5C8; border-color:rgba(57,231,168,.32);}
-  .spin-tag{
-    border-radius:5px; padding:2px 5px; font-family:'JetBrains Mono',monospace;
-    font-size:8.5px; font-weight:700; letter-spacing:.04em;
-  }
-  .spin-tag.fe{background:rgba(185,96,232,.18); color:#D79BFA; border:0.5px solid rgba(185,96,232,.35);}
-  .spin-tag.wp{background:rgba(45,226,214,.13); color:var(--cyan); border:0.5px solid rgba(45,226,214,.3);}
   .spin-check{
-    width:23px; height:23px; flex:none; display:flex; align-items:center; justify-content:center;
-    border:0.5px solid #414551; border-radius:6px; background:#1D2028; color:transparent; cursor:pointer;
+    width:18px; height:18px; flex:none; display:flex; align-items:center; justify-content:center;
+    border:0.5px solid #414551; border-radius:5px; background:#1D2028; color:transparent; cursor:pointer;
     transition:background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
   }
   .spin-check:hover{border-color:#697080; transform:translateY(-1px);}
@@ -746,11 +767,13 @@
     color:var(--lo); font-size:13px;
   }
   .spin-legend{
-    display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;
-    margin-top:12px; color:var(--lo); font-size:11px;
+    position:sticky; top:16px; flex:none; width:132px;
+    display:flex; flex-direction:column; gap:10px;
+    background:var(--panel); border:0.5px solid var(--line); border-radius:11px;
+    padding:12px; color:var(--lo); font-size:11px;
   }
-  .spin-legend-item{display:inline-flex; align-items:center; gap:6px; white-space:nowrap;}
-  .spin-legend .spin-perk{height:18px; font-size:7px;}
+  .spin-legend-item{display:flex; align-items:center; gap:7px; white-space:normal; line-height:1.25;}
+  .spin-legend .spin-perk{height:18px; font-size:7px; flex:none;}
 
   @media (prefers-reduced-motion:reduce){
     .gauge-card.is-switching .gauge-content,
@@ -830,6 +853,12 @@
     .spin-bulk{align-self:stretch;}
     .spin-bulk button{flex:1;}
     .spin-search{min-width:0;}
+    .spin-body{flex-direction:column;}
+    .spin-legend{
+      position:static; width:100%; flex-direction:row; flex-wrap:wrap; align-items:center;
+      justify-content:flex-start; gap:12px;
+    }
+    .spin-legend-item{white-space:nowrap;}
     .spin-groups{display:flex; flex-direction:column;}
     .spin-column{display:contents;}
     .spin-group{order:var(--brand-order);}
@@ -847,7 +876,7 @@
       <svg viewBox="0 0 24 24" fill="none"><path d="M3 16 L3 8 L7 8 L9 5 L15 5 L17 8 L21 8 L21 16 Z" stroke="#2DE2D6" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7.5" cy="16" r="2" fill="#0A0A0E" stroke="#2DE2D6" stroke-width="1.4"/><circle cx="16.5" cy="16" r="2" fill="#0A0A0E" stroke="#2DE2D6" stroke-width="1.4"/></svg>
       <div>
         <h1>Garage</h1>
-        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.13f10</span></div>
+        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.15f6</span></div>
       </div>
     </div>
   </div>
@@ -980,10 +1009,10 @@
     <button class="tab" data-tab="dirt">Dirt Routes</button>
     <div class="share-icons-wrap">
       <div class="share-icons">
-        <button class="icon-btn" id="exportSetupFile" type="button" aria-label="Export garage to a setup file" title="Export setup file (save)">
+        <button class="icon-btn" id="exportSetupFile" type="button" aria-label="Export garage to a backup file" title="Export backup (save)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"></path><path d="M7 3v4a1 1 0 0 0 1 1h7"></path></svg>
         </button>
-        <button class="icon-btn" id="importSetupTrigger" type="button" aria-label="Import garage from a setup file" title="Import setup file (load)">
+        <button class="icon-btn" id="importSetupTrigger" type="button" aria-label="Import garage from a backup file" title="Import backup (load)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
         </button>
         <input class="setup-file-input" id="setupFileInput" type="file" accept=".txt,text/plain,application/json">
@@ -1061,23 +1090,27 @@
 
   <div class="tab-panel" id="panelSpins" style="display:none;">
     <section class="spin-intro" aria-labelledby="spinTitle">
-      <div class="spin-intro-copy">
-        <h2 id="spinTitle">Spins &amp; Unlocks</h2>
-        <span class="spin-count" id="spinCount">0 cars</span>
+      <div class="spin-intro-top">
+        <div class="spin-intro-copy">
+          <h2 id="spinTitle">Spins &amp; Unlocks</h2>
+          <span class="spin-count" id="spinCount">0 cars</span>
+        </div>
+        <div class="spin-tools">
+          <div class="spin-search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-4-4"></path>
+            </svg>
+            <input class="spin-search" id="spinSearch" type="search" placeholder="Search year, make, model or perk" aria-label="Search Spins and Unlocks cars">
+          </div>
+          <div class="spin-filter" role="group" aria-label="Filter Spins and Unlocks cars">
+            <button type="button" class="active" data-spin-filter="all" aria-pressed="true">All</button>
+            <button type="button" data-spin-filter="collected" aria-pressed="false">Collected</button>
+            <button type="button" data-spin-filter="remaining" aria-pressed="false">Remaining</button>
+          </div>
+        </div>
       </div>
-      <div class="spin-tools">
-        <div class="spin-search-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="11" cy="11" r="7"></circle>
-            <path d="m20 20-4-4"></path>
-          </svg>
-          <input class="spin-search" id="spinSearch" type="search" placeholder="Search year, make, model or perk" aria-label="Search Spins and Unlocks cars">
-        </div>
-        <div class="spin-filter" role="group" aria-label="Filter Spins and Unlocks cars">
-          <button type="button" class="active" data-spin-filter="all" aria-pressed="true">All</button>
-          <button type="button" data-spin-filter="collected" aria-pressed="false">Collected</button>
-          <button type="button" data-spin-filter="remaining" aria-pressed="false">Remaining</button>
-        </div>
+      <div class="spin-actions-row">
         <div class="spin-collapse-actions" role="group" aria-label="Expand or collapse all brand groups">
           <button type="button" id="spinExpandAll">Expand all</button>
           <button type="button" id="spinCollapseAll">Collapse all</button>
@@ -1088,8 +1121,10 @@
         </div>
       </div>
     </section>
-    <div class="spin-groups" id="spinGroups"></div>
-    <div class="spin-legend" id="spinLegend" aria-label="Spin and unlock legend"></div>
+    <div class="spin-body">
+      <div class="spin-legend" id="spinLegend" aria-label="Spin and unlock legend"></div>
+      <div class="spin-groups" id="spinGroups"></div>
+    </div>
   </div>
   </div>
 
@@ -1107,7 +1142,7 @@
 <div class="overlay" id="wheelspinImportOverlay">
   <div class="modal">
     <h3>Import Super Wheelspin collection too?</h3>
-    <div class="sub" id="wheelspinImportSub">This setup file also includes a Super Wheelspin checklist.</div>
+    <div class="sub" id="wheelspinImportSub">This backup also includes a Super Wheelspin checklist.</div>
     <p class="wheelspin-import-note">It's usually account-specific — only bring it in if you actually want to overwrite your own checklist with theirs.</p>
     <div class="wheelspin-import-actions">
       <button class="wheelspin-import-btn primary" id="wheelspinImportYes" type="button">Yes, import it</button>
@@ -1770,7 +1805,8 @@ function createSetupFilePayload(){
       cls:String(car.cls || ""),
       race:String(car.race || ""),
       note:String(car.note || "")
-    }))
+    })),
+    ownedWheelspin:[...ownedWheelspinCars]
   };
 }
 
@@ -1781,12 +1817,12 @@ function exportSetupFile(){
   const link = document.createElement("a");
   const date = new Date().toISOString().slice(0, 10);
   link.href = url;
-  link.download = "fh6-setup-" + date + ".txt";
+  link.download = "fh6-backup-" + date + ".txt";
   document.body.appendChild(link);
   link.click();
   link.remove();
   window.setTimeout(()=>URL.revokeObjectURL(url), 1000);
-  setShareStatus("Setup file exported.", "success");
+  setShareStatus("Backup exported.", "success");
 }
 
 let pendingWheelspinImport = null;
@@ -1795,7 +1831,7 @@ async function importSetupFile(){
   const input = document.getElementById("setupFileInput");
   const file = input.files && input.files[0];
   if(!file){
-    setShareStatus("Choose a setup file first.", "error");
+    setShareStatus("Choose a backup file first.", "error");
     return;
   }
 
@@ -1805,6 +1841,7 @@ async function importSetupFile(){
     const payload = JSON.parse(contents);
     if(payload.format && payload.format !== "fh6-setup") throw new Error("invalid setup file");
     const importedCars = normalizeSharedSetup(payload);
+    const importedOwnedWheelspin = normalizeOwnedWheelspin(payload.ownedWheelspin);
 
     leaveCarEditMode(false);
     cars = importedCars;
@@ -1818,9 +1855,20 @@ async function importSetupFile(){
     syncCustomSelect(classFilter);
     save();
     renderAll();
-    setShareStatus("Setup file imported.", "success");
+    setShareStatus("Backup imported.", "success");
+
+    // The garage itself is always replaced above. Super Wheelspin progress is
+    // account-specific, so it's only ever touched if the person says yes here --
+    // and if this file has none to offer, we don't even ask.
+    if(importedOwnedWheelspin.length){
+      pendingWheelspinImport = importedOwnedWheelspin;
+      const count = importedOwnedWheelspin.length;
+      document.getElementById("wheelspinImportSub").textContent =
+        `This backup also includes ${count} checked Super Wheelspin car${count === 1 ? "" : "s"}.`;
+      document.getElementById("wheelspinImportOverlay").classList.add("show");
+    }
   }catch(error){
-    setShareStatus("Invalid setup file.", "error");
+    setShareStatus("Invalid backup file.", "error");
   }
 }
 
@@ -1922,9 +1970,9 @@ async function loadSharedSetupFromHash(){
     renderAll();
     const legacyCodeInput = document.getElementById("setupCodeInput");
     if(legacyCodeInput) legacyCodeInput.value = code;
-    setShareStatus("Shared setup loaded.", "success");
+    setShareStatus("Shared backup loaded.", "success");
   }catch(error){
-    setShareStatus("Invalid setup code.", "error");
+    setShareStatus("Invalid backup code.", "error");
   }
 }
 
@@ -2171,7 +2219,6 @@ function renderAll(){
   renderChips();
   renderList();
   renderGrid();
-  renderSuperWheelspinCars();
 }
 
 function renderTelemetry(){
@@ -2751,8 +2798,29 @@ function renderSuperWheelspinCars(){
       yearLabel.textContent = year;
       const modelLabel = document.createElement("span");
       modelLabel.className = "spin-model";
-      modelLabel.textContent = model;
       modelLabel.title = fullModel + " — " + perks.map(perk => SPIN_PERK_META[perk]?.label || perk).join(", ");
+
+      const modelText = document.createElement("span");
+      modelText.className = "spin-model-text";
+      modelText.textContent = model;
+      modelLabel.appendChild(modelText);
+
+      // The edition marker (Forza Edition / Welcome Pack) describes what
+      // VARIANT of the car this is -- it has nothing to do with the perk
+      // tree (3x/R/S/CAR). It sits right inside the model cell, immediately
+      // after the name, as a fixed (never-shrinking) sibling of the
+      // truncating name text -- so it always reads as part of "the car's
+      // name" rather than floating in whatever gap happens to be left when
+      // the name is short, and it stays visible even if a long name has to
+      // ellipsis-truncate.
+      if(isForzaEdition || isWelcomePack){
+        const editionLabel = document.createElement("span");
+        editionLabel.className = "spin-edition" + (isForzaEdition ? " fe" : " wp");
+        editionLabel.textContent = isForzaEdition ? "FE" : "WP";
+        editionLabel.title = isForzaEdition ? "Forza Edition" : "Welcome Pack";
+        modelLabel.appendChild(editionLabel);
+      }
+
       const tail = document.createElement("span");
       tail.className = "spin-car-tail";
 
@@ -2760,14 +2828,6 @@ function renderSuperWheelspinCars(){
       perkList.className = "spin-perks";
       perks.forEach(perk => perkList.appendChild(createSpinPerkIcon(perk)));
       tail.appendChild(perkList);
-
-      if(isForzaEdition || isWelcomePack){
-        const tag = document.createElement("span");
-        tag.className = "spin-tag " + (isForzaEdition ? "fe" : "wp");
-        tag.title = isForzaEdition ? "Forza Edition" : "Welcome Pack";
-        tag.textContent = isForzaEdition ? "FE" : "WP";
-        tail.appendChild(tag);
-      }
 
       const check = document.createElement("button");
       check.type = "button";
@@ -2823,7 +2883,13 @@ function switchTabWithSlide(targetButton){
   const outClass = movingRight ? "panel-slide-out-left" : "panel-slide-out-right";
   const inClass = movingRight ? "panel-slide-in-right" : "panel-slide-in-left";
   const tabs = document.querySelector(".tabs");
+  const tabStage = document.querySelector(".tab-stage");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Always restore clipping before a (potential) new slide animation starts --
+  // the Spins-only "let sticky escape" override only applies once fully
+  // settled on that tab, never while a transition is actually animating.
+  tabStage.classList.remove("spins-settled");
 
   window.clearTimeout(tabSwapTimer);
   window.clearTimeout(tabEndTimer);
@@ -2837,6 +2903,7 @@ function switchTabWithSlide(targetButton){
 
   if(targetTab === currentTab){
     tabTransitioning = false;
+    if(targetTab === "spins") tabStage.classList.add("spins-settled");
     return;
   }
 
@@ -2845,6 +2912,7 @@ function switchTabWithSlide(targetButton){
     currentPanel.style.display = "none";
     targetPanel.style.display = "";
     tabVisualState = targetTab;
+    if(targetTab === "spins") tabStage.classList.add("spins-settled");
     return;
   }
 
@@ -2864,6 +2932,7 @@ function switchTabWithSlide(targetButton){
     tabTransitioning = false;
     tabSwapTimer = 0;
     tabEndTimer = 0;
+    if(tabVisualState === "spins") tabStage.classList.add("spins-settled");
   }, 600);
 }
 
@@ -3117,6 +3186,11 @@ loadCollapsedSpinBrands();
 // at runtime) -- render it once here rather than on every renderAll(), which
 // fires on every unrelated garage-car add/edit/delete/import.
 renderDirtRoutes();
+// Spins & Unlocks has its own dedicated render calls wherever ITS state
+// actually changes (search, filter, check/uncheck, collapse, import) -- it
+// doesn't depend on the garage's own `cars` array at all, so it doesn't need
+// to be inside renderAll() either. One render here covers the initial paint.
+renderSuperWheelspinCars();
 
 load();
 loadSharedSetupFromHash();
