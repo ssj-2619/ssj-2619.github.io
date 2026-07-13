@@ -772,8 +772,11 @@
     background:var(--panel); border:0.5px solid var(--line); border-radius:11px;
     padding:12px; color:var(--lo); font-size:11px;
   }
-  .spin-legend-item{display:flex; align-items:center; gap:7px; white-space:normal; line-height:1.25;}
-  .spin-legend .spin-perk{height:18px; font-size:7px; flex:none;}
+  .spin-legend-item{display:flex; align-items:center; gap:8px; white-space:normal; line-height:1.25;}
+  .spin-legend .spin-perk{
+    height:18px; width:26px; flex:none; font-size:7px;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
 
   @media (prefers-reduced-motion:reduce){
     .gauge-card.is-switching .gauge-content,
@@ -876,7 +879,7 @@
       <svg viewBox="0 0 24 24" fill="none"><path d="M3 16 L3 8 L7 8 L9 5 L15 5 L17 8 L21 8 L21 16 Z" stroke="#2DE2D6" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7.5" cy="16" r="2" fill="#0A0A0E" stroke="#2DE2D6" stroke-width="1.4"/><circle cx="16.5" cy="16" r="2" fill="#0A0A0E" stroke="#2DE2D6" stroke-width="1.4"/></svg>
       <div>
         <h1>Garage</h1>
-        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.15f6</span></div>
+        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.15f9</span></div>
       </div>
     </div>
   </div>
@@ -1371,6 +1374,9 @@ const SPIN_PERK_META = {
   regular3:{label:"3x Regular Wheelspins", short:"3x", className:"regular3"},
   unlock:{label:"Car Unlock", short:"CAR", className:"unlock"}
 };
+// Left-to-right badge order in the car list, and top-to-bottom order in the
+// sidebar legend: Car Unlock, Regular Wheelspin, 3x Regular Wheelspins, Super Wheelspin.
+const SPIN_PERK_ORDER = ["unlock","regular","regular3","super"];
 const SPIN_UNLOCK_CARS = [
   ["1969 Toyota 2000GT", ["regular3","regular","super"]],
 
@@ -1648,14 +1654,44 @@ function classFromPi(pi){
   return "D";
 }
 
+// A car entry is only usable if it has the shape the rest of the app expects.
+// Anything else (null, wrong type, missing/garbage fields) gets dropped rather
+// than crashing renderAll() the moment it's touched -- one corrupted entry
+// (from a manual localStorage edit, a browser extension, or a future format
+// change) shouldn't take down the whole garage.
+function isValidStoredCar(car){
+  return car
+    && typeof car === "object"
+    && typeof car.name === "string"
+    && CLASS_ORDER.includes(car.cls)
+    && RACE_ORDER.includes(car.race);
+}
+
 function load(){
   let stored = null;
   try{
     const raw = localStorage.getItem(STORE_KEY);
     stored = raw ? JSON.parse(raw) : null;
   }catch(e){ stored = null; }
-  if(stored === null){ cars = []; save(); }
-  else{ cars = stored; }
+
+  if(!Array.isArray(stored)){
+    cars = [];
+    if(stored !== null) console.error("Stored garage data was not an array; resetting.", stored);
+    save();
+  }else{
+    const clean = stored.filter(isValidStoredCar).map(car=>({
+      id: typeof car.id === "number" ? car.id : Date.now() + Math.random(),
+      name: car.name,
+      cls: car.cls,
+      race: car.race,
+      note: typeof car.note === "string" ? car.note : ""
+    }));
+    if(clean.length !== stored.length){
+      console.error(`Dropped ${stored.length - clean.length} invalid car entr${stored.length - clean.length === 1 ? "y" : "ies"} from storage.`);
+    }
+    cars = clean;
+    if(clean.length !== stored.length) save();
+  }
   renderAll();
 }
 function save(){
@@ -2253,7 +2289,8 @@ function miniGaugeSvg(pct, color){
 
 function renderGauge(){
   const covered = countCovered();
-  const pct = covered/48;
+  const totalCells = RACE_ORDER.length * CLASS_ORDER.length;
+  const pct = covered/totalCells;
   const len = 251.3;
   const offset = len * (1-pct);
   const fill = document.getElementById("gaugeFill");
@@ -2284,7 +2321,7 @@ function renderGauge(){
       </div>
       <div class="race-gauge-meta">
         <span class="race-gauge-name">${race}</span>
-        <span class="race-gauge-count">${raceCovered}/8</span>
+        <span class="race-gauge-count">${raceCovered}/${CLASS_ORDER.length}</span>
       </div>
     `;
     raceWrap.appendChild(item);
@@ -2683,7 +2720,7 @@ function renderSpinLegend(){
   const legend = document.getElementById("spinLegend");
   if(!legend) return;
   legend.innerHTML = "";
-  ["super","regular","regular3","unlock"].forEach(perk => {
+  ["unlock","regular","regular3","super"].forEach(perk => {
     const meta = SPIN_PERK_META[perk];
     const item = document.createElement("span");
     item.className = "spin-legend-item";
@@ -2798,7 +2835,8 @@ function renderSuperWheelspinCars(){
       yearLabel.textContent = year;
       const modelLabel = document.createElement("span");
       modelLabel.className = "spin-model";
-      modelLabel.title = fullModel + " — " + perks.map(perk => SPIN_PERK_META[perk]?.label || perk).join(", ");
+      const orderedPerksForTitle = SPIN_PERK_ORDER.filter(perk => perks.includes(perk));
+      modelLabel.title = fullModel + " — " + orderedPerksForTitle.map(perk => SPIN_PERK_META[perk]?.label || perk).join(", ");
 
       const modelText = document.createElement("span");
       modelText.className = "spin-model-text";
@@ -2826,7 +2864,8 @@ function renderSuperWheelspinCars(){
 
       const perkList = document.createElement("span");
       perkList.className = "spin-perks";
-      perks.forEach(perk => perkList.appendChild(createSpinPerkIcon(perk)));
+      const orderedPerks = SPIN_PERK_ORDER.filter(perk => perks.includes(perk));
+      orderedPerks.forEach(perk => perkList.appendChild(createSpinPerkIcon(perk)));
       tail.appendChild(perkList);
 
       const check = document.createElement("button");
