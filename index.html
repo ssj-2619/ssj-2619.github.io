@@ -39,57 +39,7 @@
   .gauge-card{
     background:var(--panel); border:0.5px solid var(--line); border-radius:16px;
     padding:50px 24px 18px; display:flex; flex-direction:column; align-items:center;
-    margin-bottom:28px;
-    position:relative; touch-action:pan-y; cursor:grab;
-    user-select:none; -webkit-user-select:none;
-  }
-  .gauge-card.is-dragging{cursor:grabbing; overflow:hidden;}
-  .gauge-card.is-dragging .gauge-content,
-  .gauge-card.is-dragging .gauge-foot{transition:none; will-change:transform,opacity;}
-  .gauge-card.is-switching{overflow:hidden;}
-  .gauge-toggle{
-    position:absolute; top:12px; left:50%; transform:translateX(-50%);
-    width:174px; height:30px; display:grid; grid-template-columns:1fr 1fr; align-items:center;
-    background:#0F1016; color:var(--lo); border:0.5px solid var(--line);
-    border-radius:999px; padding:3px; overflow:hidden;
-    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:11.5px;
-    letter-spacing:.02em; cursor:pointer; z-index:2;
-  }
-  .gauge-toggle::before{
-    content:""; position:absolute; top:3px; bottom:3px; left:3px;
-    width:calc(50% - 3px); border-radius:999px;
-    background:linear-gradient(135deg,#2DE2D6,#20B9D0);
-    box-shadow:0 3px 12px rgba(45,226,214,.2);
-    transform:translateX(0); transition:transform .3s cubic-bezier(.2,.8,.2,1);
-  }
-  .gauge-toggle[data-mode="race"]::before{transform:translateX(100%);}
-  .gauge-toggle span{
-    position:relative; z-index:1; transition:color .22s ease; pointer-events:none;
-  }
-  .gauge-toggle[data-mode="overall"] .toggle-overall,
-  .gauge-toggle[data-mode="race"] .toggle-race{color:#071014;}
-  .gauge-toggle[data-mode="overall"] .toggle-race,
-  .gauge-toggle[data-mode="race"] .toggle-overall{color:var(--lo);}
-  .gauge-toggle:focus-visible{
-    outline:2px solid var(--cyan); outline-offset:3px;
-  }
-  .gauge-toggle:hover{border-color:rgba(45,226,214,.65);}
-  .gauge-card.is-switching .gauge-toggle{pointer-events:none;}
-  .gauge-card.slide-out-left .gauge-content,
-  .gauge-card.slide-out-left .gauge-foot{
-    animation:gaugeSlideOutLeft .24s cubic-bezier(.4,0,.8,.2) forwards;
-  }
-  .gauge-card.slide-out-right .gauge-content,
-  .gauge-card.slide-out-right .gauge-foot{
-    animation:gaugeSlideOutRight .24s cubic-bezier(.4,0,.8,.2) forwards;
-  }
-  .gauge-card.slide-in-right .gauge-content,
-  .gauge-card.slide-in-right .gauge-foot{
-    animation:gaugeSlideInRight .36s cubic-bezier(.2,.8,.2,1) both;
-  }
-  .gauge-card.slide-in-left .gauge-content,
-  .gauge-card.slide-in-left .gauge-foot{
-    animation:gaugeSlideInLeft .36s cubic-bezier(.2,.8,.2,1) both;
+    margin-bottom:28px; position:relative;
   }
   @keyframes gaugeSlideOutLeft{
     from{opacity:1; transform:translateX(0) scale(1); filter:blur(0);}
@@ -268,25 +218,6 @@
     color:var(--lo); margin-top:4px; min-height:18px; text-align:center;
   }
   .gauge-foot b{color:var(--hi); font-weight:500;}
-  .race-gauges{
-    display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px 22px;
-    width:100%; margin-top:0;
-  }
-  .race-gauges[hidden]{display:none;}
-  .race-gauge{min-width:0; position:relative;}
-  .race-gauge svg{display:block; width:100%; height:68px;}
-  .race-gauge-meter{position:relative; height:68px;}
-  .race-gauge-meta{display:flex; align-items:baseline; justify-content:center; gap:8px; margin-top:3px;}
-  .race-gauge-name{
-    font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; color:var(--hi);
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  }
-  .race-gauge-count{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--lo); white-space:nowrap;}
-  .race-gauge-pct{
-    position:absolute; left:50%; bottom:3px; transform:translateX(-50%);
-    font-family:'Rajdhani',sans-serif; font-size:21px; font-weight:700; line-height:1;
-    text-shadow:0 1px 4px rgba(0,0,0,.55); pointer-events:none;
-  }
 
   /* ---------- tabs ---------- */
   .tabs{
@@ -409,7 +340,7 @@
     display:flex; gap:8px; flex-wrap:wrap; background:var(--panel); border:0.5px solid var(--line);
     border-radius:12px; padding:12px; margin-bottom:18px; position:relative; z-index:5;
   }
-  .name-field{position:relative; flex:2.4 1 260px; min-width:180px;}
+  .name-field{position:relative; flex:3 1 320px; min-width:220px;}
   .name-field input{width:100%;}
   .suggestions{
     position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:80;
@@ -500,13 +431,34 @@
 
   /* ---------- garage list ---------- */
   .row{
-    display:grid; grid-template-columns:1fr 52px 132px 1fr 52px; align-items:center; gap:12px;
+    display:grid; grid-template-columns:1.6fr 52px 132px 1fr 52px; align-items:center; gap:12px;
     padding:11px 5px; border:0.5px solid transparent; border-bottom-color:var(--line);
     border-radius:7px; transition:background .15s ease, border-color .15s ease;
   }
   .row:last-child{border-bottom:none;}
   .row.editing{background:rgba(45,226,214,.055); border-color:rgba(45,226,214,.38);}
-  .row .name{font-size:14px; color:var(--hi); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .row .name{
+    font-size:14px; color:var(--hi); font-weight:500; min-width:0;
+    display:flex; align-items:baseline; gap:6px;
+  }
+  .row .name-year{
+    flex:none; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; color:var(--amber);
+  }
+  .row .name-rest{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .row .name-edition{
+    flex:none; display:inline-flex; align-items:center; height:15px; padding:0 6px;
+    border-radius:4px; font-family:'Rajdhani',sans-serif; font-size:9.5px; font-weight:700;
+    letter-spacing:.04em; text-transform:uppercase; color:#fff; white-space:nowrap;
+    text-shadow:0 1px 1px rgba(0,0,0,.35); align-self:center;
+  }
+  .row .name-edition.fe{
+    background:linear-gradient(115deg, #7A2FD6 0%, #9C3FE0 35%, #3E6BF0 100%);
+    box-shadow:0 0 0 0.5px rgba(196,150,255,.4), 0 1px 4px rgba(122,47,214,.35);
+  }
+  .row .name-edition.wp{
+    background:linear-gradient(115deg, #0E8F9E 0%, #12B4C4 40%, #2DE2D6 100%);
+    box-shadow:0 0 0 0.5px rgba(93,230,224,.4), 0 1px 4px rgba(18,180,196,.35);
+  }
   .row .note{font-size:12.5px; color:var(--lo); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .badge{
     font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; padding:3px 0;
@@ -791,8 +743,6 @@
   }
 
   @media (prefers-reduced-motion:reduce){
-    .gauge-card.is-switching .gauge-content,
-    .gauge-card.is-switching .gauge-foot,
     .tab-panel{animation:none;}
     .spin-group-body,
     .spin-caret,
@@ -850,10 +800,6 @@
     .gauge-content{max-width:100%; height:250px;}
     .gauge-wrap{max-width:210px;}
     .gauge-num .pct{font-size:28px;}
-    .race-gauges{grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px 14px;}
-    .race-gauge svg, .race-gauge-meter{height:56px;}
-    .race-gauge-name{font-size:13px;}
-    .race-gauge-pct{font-size:17px;}
     .surface-summary-top{align-items:flex-start; flex-direction:column; gap:12px;}
     .surface-numbers{width:100%; justify-content:space-between;}
     .dirt-route-list{grid-template-columns:1fr;}
@@ -891,16 +837,12 @@
       <svg viewBox="0 0 24 24" fill="none"><path d="M3 16 L3 8 L7 8 L9 5 L15 5 L17 8 L21 8 L21 16 Z" stroke="#2DE2D6" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7.5" cy="16" r="2" fill="#0A0A0E" stroke="#2DE2D6" stroke-width="1.4"/><circle cx="16.5" cy="16" r="2" fill="#0A0A0E" stroke="#2DE2D6" stroke-width="1.4"/></svg>
       <div>
         <h1>Garage</h1>
-        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.16f1</span></div>
+        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.19f1</span></div>
       </div>
     </div>
   </div>
 
   <div class="gauge-card" id="gaugeCard">
-    <button class="gauge-toggle" id="gaugeToggle" type="button" data-mode="overall" aria-label="Coverage view: Overall">
-      <span class="toggle-overall">Overall</span>
-      <span class="toggle-race">Race types</span>
-    </button>
     <button class="ignition-btn" id="ignitionBtn" type="button" aria-label="Start engine" aria-pressed="false" title="Start engine">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg>
     </button>
@@ -1012,7 +954,6 @@
           </div>
         </div>
       </div>
-      <div class="race-gauges" id="raceGauges" hidden></div>
     </div>
   </div>
 
@@ -1607,18 +1548,10 @@ let filterClass = "";
 let carSort = "default";
 let carMetaByName = new Map();
 let fh6CarData = [];
-let gaugeMode = "overall";
-let gaugeTransitioning = false;
 let tabTransitioning = false;
 let tabVisualState = "garage";
 let tabSwapTimer = 0;
 let tabEndTimer = 0;
-let gaugeDragPointerId = null;
-let gaugeDragStartX = 0;
-let gaugeDragStartY = 0;
-let gaugeDragX = 0;
-let gaugeDragY = 0;
-let gaugeSnapTimer = 0;
 let activeSuggestionIndex = -1;
 let currentSuggestions = [];
 const TAB_ORDER = ["garage","coverage","spins","dirt"];
@@ -1688,6 +1621,27 @@ function isValidStoredCar(car){
     && RACE_ORDER.includes(car.race);
 }
 
+// One-time migration for cars added back when the car-name suggestion box
+// disambiguated multi-year models as "Model (YYYY)" (e.g. "Ford GT (2005)")
+// instead of today's "YYYY Model" style. Deliberately conservative: it only
+// rewrites names that unambiguously end in a single " (YYYY)" group with a
+// plausible car-model year, and leaves everything else -- including names
+// with more than one parenthetical group, where "which one is the year" is
+// genuinely ambiguous -- completely untouched. Never throws.
+function migrateOldYearFormat(name){
+  if(typeof name !== "string") return name;
+  const trimmed = name.trim();
+  const parenCount = (trimmed.match(/\(/g) || []).length;
+  if(parenCount > 1) return name;
+  const match = trimmed.match(/^(.+?)\s\((\d{4})\)$/);
+  if(!match) return name;
+  const [, model, year] = match;
+  const yearNum = Number(year);
+  if(yearNum < 1900 || yearNum > 2035) return name;
+  if(!model.trim()) return name;
+  return `${year} ${model.trim()}`;
+}
+
 function load(){
   let stored = null;
   try{
@@ -1700,18 +1654,23 @@ function load(){
     if(stored !== null) console.error("Stored garage data was not an array; resetting.", stored);
     save();
   }else{
-    const clean = stored.filter(isValidStoredCar).map(car=>({
-      id: typeof car.id === "number" ? car.id : Date.now() + Math.random(),
-      name: car.name,
-      cls: car.cls,
-      race: car.race,
-      note: typeof car.note === "string" ? car.note : ""
-    }));
+    let anyMigrated = false;
+    const clean = stored.filter(isValidStoredCar).map(car=>{
+      const migratedName = migrateOldYearFormat(car.name);
+      if(migratedName !== car.name) anyMigrated = true;
+      return {
+        id: typeof car.id === "number" ? car.id : Date.now() + Math.random(),
+        name: migratedName,
+        cls: car.cls,
+        race: car.race,
+        note: typeof car.note === "string" ? car.note : ""
+      };
+    });
     if(clean.length !== stored.length){
       console.error(`Dropped ${stored.length - clean.length} invalid car entr${stored.length - clean.length === 1 ? "y" : "ies"} from storage.`);
     }
     cars = clean;
-    if(clean.length !== stored.length) save();
+    if(clean.length !== stored.length || anyMigrated) save();
   }
   renderAll();
 }
@@ -1857,12 +1816,22 @@ function createSetupFilePayload(){
     format:"fh6-setup",
     version:1,
     exportedAt:new Date().toISOString(),
-    cars:cars.map(car=>({
-      name:String(car.name || ""),
-      cls:String(car.cls || ""),
-      race:String(car.race || ""),
-      note:String(car.note || "")
-    })),
+    // Names are re-migrated here (not just read from `cars` as-is) so an
+    // export triggered before the background completion passes have
+    // finished -- e.g. right after opening the file, while the Fandom
+    // fetch is still in flight -- still comes out in the current
+    // "YEAR Model" shape instead of freezing in whatever half-migrated
+    // state `cars` happened to be in at that exact moment.
+    cars:cars.map(car=>{
+      const migratedName = migrateOldYearFormat(String(car.name || ""));
+      const completedName = completeYearFromFandomData(migratedName, fh6CarData);
+      return {
+        name:completedName,
+        cls:String(car.cls || ""),
+        race:String(car.race || ""),
+        note:String(car.note || "")
+      };
+    }),
     ownedWheelspin:[...ownedWheelspinCars]
   };
 }
@@ -2167,15 +2136,98 @@ async function fetchFh6CarData(){
   if(typeof wikiText !== "string") throw new Error("Fandom API response did not include wikitext");
 
   const mainCarsSection = wikiText.split("===Unobtainable===")[0];
-  const cars = [...mainCarsSection.matchAll(/\{\{CarListStatsFH6\|[^}]+\}\}/g)]
+  const rawMatches = [...mainCarsSection.matchAll(/\{\{CarListStatsFH6\|[^}]+\}\}/g)];
+
+  // parts[1] is the canonical name and the one that carries every real
+  // distinguishing detail -- "Forza Edition", "RF", "GT-Four ST205", etc.
+  // parts[2] is NOT a full alternate name: for a multi-year model it's just
+  // the bare model name with the variant/edition wording stripped out (e.g.
+  // "Mazda MX-5 Miata Forza Edition" and the plain "Mazda MX-5 Miata (1994)"
+  // both collapse to the same parts[2] of "Mazda MX-5 Miata"), which used to
+  // make two genuinely different cars produce the same final name and get
+  // silently deduplicated away. So parts[1] stays the source of truth and
+  // only strips a trailing " (YYYY)" suffix from it when present (the
+  // wiki's own way of disambiguating same-named cars by year) -- everything
+  // else in the name, including edition/variant wording, survives untouched.
+  //
+  // The one thing parts[1] itself is missing: for liveried/numbered cars
+  // (race cars, rally cars, trophy trucks -- confirmed across every such
+  // entry in the current car list) the wiki puts the "#NNN" race-number
+  // marker only in parts[2] ("Porsche #3 917 LH"), while parts[1] has the
+  // same number as a bare digit ("Porsche 3 917 LH Forza Edition"). So when
+  // parts[2] has a "#NNN" that parts[1] has as a matching bare number, that
+  // "#" gets carried over onto parts[1] -- preserving both the race number
+  // AND whatever suffix (Forza Edition, etc.) only parts[1] knows about.
+  // parts[3] is the model year and is always populated regardless.
+  const cars = rawMatches
     .map(match => splitWikiTemplateArgs(match[0]))
-    .map(parts => ({
-      name: (parts[1] || "").trim().replace(/\s+/g, " "),
-      rating: classFromPi((parts[13] || "").trim())
-    }))
+    .map(parts => {
+      let rawName = (parts[1] || "").trim().replace(/\s+/g, " ");
+      const part2 = (parts[2] || "").trim().replace(/\s+/g, " ");
+      const hashMatch = part2.match(/#(\d+)/);
+      if(hashMatch){
+        const number = hashMatch[1];
+        const numberBoundary = new RegExp(`(^|\\s)${number}(\\s|$)`);
+        if(numberBoundary.test(rawName)){
+          rawName = rawName.replace(numberBoundary, (m, before, after) => `${before}#${number}${after}`);
+        }
+      }
+      const model = rawName.replace(/\s\(\d{4}\)$/, "").trim();
+      const year = (parts[3] || "").trim();
+      const name = year && /^\d{4}$/.test(year) ? `${year} ${model}` : model;
+      return {
+        name: name.trim(),
+        rating: classFromPi((parts[13] || "").trim())
+      };
+    })
     .filter(car => car.name);
 
   return [...new Map(cars.map(car => [car.name, car])).values()];
+}
+
+// Best-effort year completion for garage cars whose stored name has no
+// leading year at all (unlike migrateOldYearFormat, which only handles the
+// "Model (YYYY)" bracket style). This needs the live Fandom car list to know
+// what year a given model actually is, so it can only run after that list
+// has loaded -- see the fillCarSuggestions() call below. It only touches a
+// name when exactly one Fandom entry matches after normalization; zero or
+// multiple matches (e.g. "Ford GT", which has both a 2005 and a 2017 model)
+// are left completely alone rather than guessing.
+function completeYearFromFandomData(name, fandomCars){
+  if(typeof name !== "string") return name;
+  if(/^\d{4}\s/.test(name.trim())) return name;
+  if(!Array.isArray(fandomCars) || fandomCars.length === 0) return name;
+
+  const target = normalizeCarSearch(name);
+  if(!target) return name;
+
+  const matches = fandomCars.filter(car => {
+    if(typeof car.name !== "string") return false;
+    const withoutYear = car.name.replace(/^\d{4}\s+/, "");
+    return normalizeCarSearch(withoutYear) === target;
+  });
+
+  if(matches.length !== 1) return name;
+  return matches[0].name;
+}
+
+// Runs once, right after the Fandom car list successfully loads. Garage cars
+// with no year at all (typically added before the suggestion box tracked
+// years, or typed by hand) get completed where there's an unambiguous match;
+// everything else -- including cars if this data never loads, e.g. offline
+// or blocked by CORS from a file:// origin -- is left exactly as it was.
+function completeMissingYearsFromFandomData(){
+  if(!Array.isArray(fh6CarData) || fh6CarData.length === 0) return;
+  let anyCompleted = false;
+  cars = cars.map(car=>{
+    const completedName = completeYearFromFandomData(car.name, fh6CarData);
+    if(completedName !== car.name) anyCompleted = true;
+    return completedName === car.name ? car : {...car, name: completedName};
+  });
+  if(anyCompleted){
+    save();
+    renderList();
+  }
 }
 
 async function fillCarSuggestions(){
@@ -2184,6 +2236,7 @@ async function fillCarSuggestions(){
     carMetaByName = new Map(fh6CarData.map(car => [car.name.toLowerCase(), car]));
     renderCarSuggestions();
     updateClassFromName();
+    completeMissingYearsFromFandomData();
   }catch(e){
     console.error("Could not load FH6 car suggestions", e);
   }
@@ -2303,21 +2356,6 @@ function countCovered(){
   return n;
 }
 
-function countCoveredForRace(race){
-  return CLASS_ORDER.reduce((n, cls) => n + (cars.some(x=>x.race===race && x.cls===cls) ? 1 : 0), 0);
-}
-
-function miniGaugeSvg(pct, color){
-  const len = 125.7;
-  const offset = len * (1-pct);
-  return `
-    <svg viewBox="0 0 100 62" aria-hidden="true">
-      <path d="M 10 52 A 40 40 0 0 1 90 52" stroke="#1C1E26" stroke-width="10" fill="none" stroke-linecap="round"/>
-      <path d="M 10 52 A 40 40 0 0 1 90 52" stroke="${color}" stroke-width="10" fill="none" stroke-linecap="round"
-            stroke-dasharray="${len}" stroke-dashoffset="${offset}"/>
-    </svg>`;
-}
-
 function renderGauge(){
   const covered = countCovered();
   const totalCells = RACE_ORDER.length * CLASS_ORDER.length;
@@ -2327,177 +2365,6 @@ function renderGauge(){
   const fill = document.getElementById("gaugeFill");
   requestAnimationFrame(()=>{ fill.style.strokeDashoffset = offset; });
   document.getElementById("gaugePct").textContent = Math.round(pct*100) + "%";
-  document.getElementById("overallGauge").hidden = gaugeMode === "race";
-  document.getElementById("raceGauges").hidden = gaugeMode !== "race";
-  const gaugeToggle = document.getElementById("gaugeToggle");
-  gaugeToggle.dataset.mode = gaugeMode;
-  gaugeToggle.setAttribute(
-    "aria-label",
-    gaugeMode === "overall"
-      ? "Coverage view: Overall. Activate to show Race types."
-      : "Coverage view: Race types. Activate to show Overall."
-  );
-
-  const raceWrap = document.getElementById("raceGauges");
-  raceWrap.innerHTML = "";
-  RACE_ORDER.forEach(race=>{
-    const raceCovered = countCoveredForRace(race);
-    const racePct = raceCovered / CLASS_ORDER.length;
-    const item = document.createElement("div");
-    item.className = "race-gauge";
-    item.innerHTML = `
-      <div class="race-gauge-meter">
-        ${miniGaugeSvg(racePct, RACE_COLOR[race])}
-        <div class="race-gauge-pct" style="color:${RACE_COLOR[race]}">${Math.round(racePct*100)}%</div>
-      </div>
-      <div class="race-gauge-meta">
-        <span class="race-gauge-name">${race}</span>
-        <span class="race-gauge-count">${raceCovered}/${CLASS_ORDER.length}</span>
-      </div>
-    `;
-    raceWrap.appendChild(item);
-  });
-}
-
-function toggleGaugeModeWithSlideTransition(){
-  if(gaugeTransitioning) return;
-  const nextMode = gaugeMode === "overall" ? "race" : "overall";
-  const card = document.getElementById("gaugeCard");
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  if(reduceMotion){
-    gaugeMode = nextMode;
-    renderGauge();
-    return;
-  }
-
-  const movingToOverall = nextMode === "overall";
-  const outClass = movingToOverall ? "slide-out-left" : "slide-out-right";
-  const inClass = movingToOverall ? "slide-in-right" : "slide-in-left";
-  gaugeTransitioning = true;
-  card.classList.add("is-switching", outClass);
-  window.setTimeout(()=>{
-    gaugeMode = nextMode;
-    renderGauge();
-    card.classList.remove(outClass);
-    card.classList.add(inClass);
-  }, 230);
-  window.setTimeout(()=>{
-    card.classList.remove("is-switching", inClass);
-    gaugeTransitioning = false;
-  }, 610);
-}
-
-function gaugeDragElements(){
-  // .gauge-foot was removed from the DOM (the "X of 48 combinations covered"
-  // line no longer exists), so filter out any selector that no longer
-  // resolves to an element rather than assuming every entry here is present.
-  return [
-    document.querySelector("#gaugeCard .gauge-content"),
-    document.querySelector("#gaugeCard .gauge-foot")
-  ].filter(Boolean);
-}
-
-function clearGaugeDragStyles(){
-  gaugeDragElements().forEach(element => {
-    element.style.transition = "";
-    element.style.transform = "";
-    element.style.opacity = "";
-  });
-}
-
-function completeGaugeSwipe(direction){
-  if(gaugeTransitioning) return;
-  const card = document.getElementById("gaugeCard");
-  const inClass = direction === "left" ? "slide-in-right" : "slide-in-left";
-  const exitX = direction === "left" ? -card.clientWidth : card.clientWidth;
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  if(reduceMotion){
-    clearGaugeDragStyles();
-    gaugeMode = gaugeMode === "overall" ? "race" : "overall";
-    renderGauge();
-    return;
-  }
-
-  gaugeTransitioning = true;
-  card.classList.add("is-switching");
-  gaugeDragElements().forEach(element => {
-    element.style.transition = "transform .18s cubic-bezier(.4,0,.8,.2), opacity .18s ease";
-    element.style.transform = `translateX(${exitX}px)`;
-    element.style.opacity = "0";
-  });
-  window.setTimeout(()=>{
-    gaugeMode = gaugeMode === "overall" ? "race" : "overall";
-    renderGauge();
-    clearGaugeDragStyles();
-    card.classList.add(inClass);
-  }, 180);
-  window.setTimeout(()=>{
-    card.classList.remove("is-switching", inClass);
-    gaugeTransitioning = false;
-  }, 560);
-}
-
-function beginGaugeDrag(event){
-  if(event.button !== 0 || gaugeTransitioning || event.target.closest("button")) return;
-  event.preventDefault();
-  const card = document.getElementById("gaugeCard");
-  window.clearTimeout(gaugeSnapTimer);
-  clearGaugeDragStyles();
-  gaugeDragPointerId = event.pointerId;
-  gaugeDragStartX = event.clientX;
-  gaugeDragStartY = event.clientY;
-  gaugeDragX = 0;
-  gaugeDragY = 0;
-  card.setPointerCapture?.(event.pointerId);
-}
-
-function moveGaugeDrag(event){
-  if(event.pointerId !== gaugeDragPointerId) return;
-  gaugeDragX = event.clientX - gaugeDragStartX;
-  gaugeDragY = event.clientY - gaugeDragStartY;
-  if(Math.abs(gaugeDragX) <= Math.abs(gaugeDragY) || Math.abs(gaugeDragX) < 4) return;
-
-  event.preventDefault();
-  const card = document.getElementById("gaugeCard");
-  const dragLimit = card.clientWidth * .65;
-  const visualX = Math.max(-dragLimit, Math.min(dragLimit, gaugeDragX * .82));
-  const opacity = 1 - Math.min(Math.abs(visualX) / card.clientWidth, .42);
-  card.classList.add("is-dragging");
-  gaugeDragElements().forEach(element => {
-    element.style.transform = `translateX(${visualX}px)`;
-    element.style.opacity = opacity;
-  });
-}
-
-function endGaugeDrag(event){
-  if(event.pointerId !== gaugeDragPointerId) return;
-  const card = document.getElementById("gaugeCard");
-  const shouldSwitch = Math.abs(gaugeDragX) >= 65 && Math.abs(gaugeDragX) > Math.abs(gaugeDragY);
-  const direction = gaugeDragX < 0 ? "left" : "right";
-  gaugeDragPointerId = null;
-  card.releasePointerCapture?.(event.pointerId);
-  card.classList.remove("is-dragging");
-
-  if(shouldSwitch){
-    completeGaugeSwipe(direction);
-    return;
-  }
-
-  gaugeDragElements().forEach(element => {
-    element.style.transition = "transform .18s ease, opacity .18s ease";
-    element.style.transform = "translateX(0)";
-    element.style.opacity = "1";
-  });
-  gaugeSnapTimer = window.setTimeout(clearGaugeDragStyles, 190);
-}
-
-function cancelGaugeDrag(event){
-  if(event.pointerId !== gaugeDragPointerId) return;
-  gaugeDragX = 0;
-  gaugeDragY = 0;
-  endGaugeDrag(event);
 }
 
 function renderChips(){
@@ -2597,6 +2464,15 @@ function carComparatorFor(mode){
   }
 }
 
+// Splits a car name into a leading 4-digit model year (if the name starts
+// with one) and the rest, so the Garage list can style the year the same
+// way the Spins & Unlocks tab already does. Names typed without a year
+// (or with the year anywhere but the start) are left untouched.
+function splitCarNameYear(name){
+  const match = String(name || "").match(/^(\d{4})\s+(.+)$/);
+  return match ? {year: match[1], rest: match[2]} : {year: "", rest: name};
+}
+
 function renderList(){
   const wrap = document.getElementById("carList");
   wrap.innerHTML = "";
@@ -2614,7 +2490,30 @@ function renderList(){
   list.forEach(c=>{
     const row = document.createElement("div"); row.className="row";
     if(c.id === editingCarId) row.classList.add("editing");
-    const name = document.createElement("div"); name.className="name"; name.textContent=c.name;
+    const name = document.createElement("div"); name.className="name";
+    const {year, rest} = splitCarNameYear(c.name);
+    // Same edition detection the Spins & Unlocks tab already uses: strip a
+    // trailing "Forza Edition" / "Welcome Pack" off the display text and
+    // show it as its own badge instead, so a long edition name doesn't just
+    // run on as part of the plain model text.
+    const isForzaEdition = /\bForza Edition$/i.test(rest);
+    const isWelcomePack = /\bWelcome Pack$/i.test(rest);
+    const restWithoutEdition = rest
+      .replace(/\s+Forza Edition$/i, "")
+      .replace(/\s+Welcome Pack$/i, "");
+    if(year){
+      const yearSpan = document.createElement("span"); yearSpan.className = "name-year"; yearSpan.textContent = year;
+      name.appendChild(yearSpan);
+    }
+    const restSpan = document.createElement("span"); restSpan.className = "name-rest"; restSpan.textContent = restWithoutEdition;
+    name.appendChild(restSpan);
+    if(isForzaEdition || isWelcomePack){
+      const editionSpan = document.createElement("span");
+      editionSpan.className = "name-edition" + (isForzaEdition ? " fe" : " wp");
+      editionSpan.textContent = isForzaEdition ? "FE" : "WP";
+      editionSpan.title = isForzaEdition ? "Forza Edition" : "Welcome Pack";
+      name.appendChild(editionSpan);
+    }
     const clsB = document.createElement("span"); clsB.className="badge"; clsB.textContent=c.cls;
     clsB.style.background=CLASS_COLOR[c.cls]; clsB.style.color="#04140C";
     const raceB = document.createElement("span"); raceB.className="badge"; raceB.textContent=c.race;
@@ -3216,12 +3115,6 @@ document.getElementById("clearName").onclick = ()=>{
   syncNameClearButton();
   input.focus();
 };
-const gaugeCard = document.getElementById("gaugeCard");
-document.getElementById("gaugeToggle").onclick = toggleGaugeModeWithSlideTransition;
-gaugeCard.addEventListener("pointerdown", beginGaugeDrag);
-gaugeCard.addEventListener("pointermove", moveGaugeDrag);
-gaugeCard.addEventListener("pointerup", endGaugeDrag);
-gaugeCard.addEventListener("pointercancel", cancelGaugeDrag);
 
 document.getElementById("addBtn").onclick = ()=>{
   const name = document.getElementById("newName").value.trim();
