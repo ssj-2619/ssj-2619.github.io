@@ -339,6 +339,7 @@
   .addrow{
     display:flex; gap:8px; flex-wrap:wrap; background:var(--panel); border:0.5px solid var(--line);
     border-radius:12px; padding:12px; margin-bottom:18px; position:relative; z-index:5;
+    box-shadow:inset 0 1px 0 rgba(45,226,214,.12);
   }
   .name-field{position:relative; flex:3 1 320px; min-width:220px;}
   .name-field input{width:100%;}
@@ -385,6 +386,13 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
   }
   #newNote{flex:1.6 1 180px;}
+  /* Grouping Add/Save and Cancel into one flex item keeps them from wrapping
+     apart from each other -- previously, whichever button ran out of room
+     first (usually Cancel, since it's last) would drop to its own line on
+     its own while its sibling stayed put, which read as broken rather than
+     as an intentional wrap. Wrapping now moves the whole action pair down
+     together, which still looks deliberate at any width. */
+  .addrow-actions{display:flex; gap:8px; flex:none; margin-left:auto;}
   .addrow input{
     height:36px; box-sizing:border-box;
     background:var(--panel2); color:var(--hi); border:0.5px solid var(--line); border-radius:8px;
@@ -396,6 +404,7 @@
   .addbtn{
     background:var(--cyan); color:#04201E; border:none; border-radius:8px; padding:8px 18px;
     font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; cursor:pointer; letter-spacing:.02em;
+    white-space:nowrap;
   }
   .addbtn:hover{filter:brightness(1.1);}
   .addrow.editing{border-color:rgba(45,226,214,.42); background:rgba(45,226,214,.035);}
@@ -403,6 +412,7 @@
   .cancel-edit{
     background:transparent; color:var(--lo); border:0.5px solid var(--line); border-radius:8px;
     padding:8px 13px; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; cursor:pointer;
+    white-space:nowrap;
   }
   .cancel-edit:hover{color:var(--hi); background:var(--panel2);}
   .cancel-edit[hidden]{display:none;}
@@ -439,9 +449,15 @@
   /* ---------- garage list ---------- */
   .row{
     display:grid; grid-template-columns:1.6fr 52px 132px 1fr 52px; align-items:center; gap:12px;
-    padding:11px 5px; border:0.5px solid transparent; border-bottom-color:var(--line);
-    border-radius:7px; transition:background .15s ease, border-color .15s ease;
+    padding:11px 5px 11px 13px; border:0.5px solid transparent; border-bottom-color:var(--line);
+    border-radius:7px; position:relative; transition:background .15s ease, border-color .15s ease;
   }
+  .row::before{
+    content:""; position:absolute; left:0; top:6px; bottom:6px; width:2.5px; border-radius:2px;
+    background:var(--row-accent, transparent); opacity:0; transition:opacity .15s ease;
+  }
+  .row:hover{background:rgba(255,255,255,.02);}
+  .row:hover::before{opacity:.85;}
   .row:last-child{border-bottom:none;}
   .row.editing{background:rgba(45,226,214,.055); border-color:rgba(45,226,214,.38);}
   .row .name{
@@ -470,6 +486,8 @@
   .badge{
     font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; padding:3px 0;
     border-radius:6px; white-space:nowrap; text-align:center; width:100%;
+    background-image:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0) 45%);
+    box-shadow:inset 0 -1px 0 rgba(0,0,0,.18), 0 1px 2px rgba(0,0,0,.25);
   }
   .row-actions{grid-column:5; display:flex; align-items:center; justify-content:flex-end; gap:2px;}
   .editbtn, .delbtn{
@@ -848,7 +866,7 @@
       <svg viewBox="0 0 24 24" fill="none"><path d="M3 16 L3 8 L7 8 L9 5 L15 5 L17 8 L21 8 L21 16 Z" stroke="#2DE2D6" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7.5" cy="16" r="2" fill="#0A0A0E" stroke="#2DE2D6" stroke-width="1.4"/><circle cx="16.5" cy="16" r="2" fill="#0A0A0E" stroke="#2DE2D6" stroke-width="1.4"/></svg>
       <div>
         <h1>Garage</h1>
-        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.19f5</span></div>
+        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.20f3</span></div>
       </div>
     </div>
   </div>
@@ -1015,8 +1033,10 @@
       <select id="newClass" aria-label="Class"></select>
       <select id="newRace" aria-label="Race type"></select>
       <input id="newNote" type="text" placeholder="Note (optional)" aria-label="Note">
-      <button class="addbtn" id="addBtn">Add car</button>
-      <button class="cancel-edit" id="cancelEditBtn" type="button" hidden>Cancel</button>
+      <div class="addrow-actions">
+        <button class="addbtn" id="addBtn">Add car</button>
+        <button class="cancel-edit" id="cancelEditBtn" type="button" hidden>Cancel</button>
+      </div>
     </div>
 
     <div id="carList"></div>
@@ -2520,6 +2540,7 @@ function renderList(){
   }
   list.forEach(c=>{
     const row = document.createElement("div"); row.className="row";
+    row.style.setProperty("--row-accent", RACE_COLOR[c.race] || "transparent");
     if(c.id === editingCarId) row.classList.add("editing");
     const name = document.createElement("div"); name.className="name";
     const {year, rest} = splitCarNameYear(c.name);
@@ -2546,9 +2567,9 @@ function renderList(){
       name.appendChild(editionSpan);
     }
     const clsB = document.createElement("span"); clsB.className="badge"; clsB.textContent=c.cls;
-    clsB.style.background=CLASS_COLOR[c.cls]; clsB.style.color="#04140C";
+    clsB.style.backgroundColor=CLASS_COLOR[c.cls]; clsB.style.color="#04140C";
     const raceB = document.createElement("span"); raceB.className="badge"; raceB.textContent=c.race;
-    raceB.style.background=RACE_COLOR[c.race]; raceB.style.color="#fff";
+    raceB.style.backgroundColor=RACE_COLOR[c.race]; raceB.style.color="#fff";
     const note = document.createElement("div"); note.className="note"; note.textContent=c.note||"";
     const actions = document.createElement("div"); actions.className="row-actions";
     const edit = document.createElement("button"); edit.className="editbtn"; edit.innerHTML=PENCIL_ICON;
