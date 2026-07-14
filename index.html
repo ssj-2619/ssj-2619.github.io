@@ -544,7 +544,7 @@
   table.cov td.cell.has1{background:#103B30; color:#7FE8C8;}
   table.cov td.cell.has2{background:#0E5C45; color:#B9FFE0;}
   .legend{
-    display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
     margin-top:12px; font-size:11px; font-family:'JetBrains Mono',monospace;
     letter-spacing:.02em; color:var(--lo);
   }
@@ -584,13 +584,13 @@
   .surface-legend i{width:8px; height:8px; border-radius:50%; display:inline-block;}
   .dirt-route-list{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
   .dirt-route{
-    background:var(--panel); border:0.5px solid var(--line); border-radius:10px; padding:13px 14px;
+    background:var(--panel); border:0.5px solid var(--line); border-radius:11px; padding:13px;
   }
   .dirt-route-head{
     display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:10px;
   }
   .dirt-route-name{
-    font-family:'Rajdhani',sans-serif; font-size:15.5px; font-weight:700; color:var(--hi);
+    font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; color:var(--hi);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .dirt-route-mix{
@@ -613,7 +613,6 @@
   }
   .spin-intro-copy{min-width:0;}
   .spin-intro h2{font-size:21px; line-height:1.1;}
-  .spin-intro .sub{font-size:11.5px; color:var(--lo); margin-top:3px;}
   .spin-count{
     display:inline-block; margin-top:8px; color:var(--amber);
     font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600;
@@ -666,10 +665,10 @@
   /* On genuinely wide viewports, let the legend sit OUTSIDE the shell's own
      920px content width instead of sharing/shrinking it -- this keeps the
      car-table area exactly as wide as it was before the sidebar existed,
-     with the legend as pure extra width to its left, rather than the whole
+     with the legend as pure extra width to its right, rather than the whole
      page effectively getting more cramped to make room for it. */
   @media (min-width:1200px){
-    .spin-body{width:calc(100% + 146px); margin-left:-146px;}
+    .spin-body{width:calc(100% + 194px);}
   }
   .spin-groups{flex:1; min-width:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
   .spin-column{display:flex; flex-direction:column; gap:10px;}
@@ -784,9 +783,24 @@
     color:var(--lo); font-size:13px;
   }
   .spin-legend{
-    position:sticky; top:16px; flex:none; width:132px;
-    display:flex; flex-direction:column; gap:10px;
+    position:sticky; top:22vh; z-index:2; flex:none; width:180px;
     background:var(--panel); border:0.5px solid var(--line); border-radius:11px;
+    overflow:hidden;
+  }
+  /* Rather than giving the legend its own separately-timed fade-in and
+     trying to match it to the tab panel's animation duration/easing, it
+     gets the exact same panel-slide-in-* class applied to it (see
+     switchTabWithSlide) -- same @keyframes, same timing, so there's
+     nothing to keep in sync in the first place. */
+  .spin-legend.panel-slide-in-right{animation:gaugeSlideInRight .36s cubic-bezier(.2,.8,.2,1) both;}
+  .spin-legend.panel-slide-in-left{animation:gaugeSlideInLeft .36s cubic-bezier(.2,.8,.2,1) both;}
+  .spin-legend-head{
+    padding:11px 13px; background:var(--panel2); border-bottom:0.5px solid var(--line);
+    font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--lo);
+  }
+  .spin-legend-body{
+    display:flex; flex-direction:column; gap:10px;
     padding:12px; color:var(--lo); font-size:11px;
   }
   .spin-legend-item{display:flex; align-items:center; gap:8px; white-space:normal; line-height:1.25;}
@@ -797,6 +811,7 @@
 
   @media (prefers-reduced-motion:reduce){
     .tab-panel{animation:none;}
+    .spin-legend{animation:none;}
     .spin-group-body,
     .spin-caret,
     .custom-select-menu,
@@ -820,7 +835,7 @@
   .modal li:last-child{border-bottom:none;}
   .modal .close{
     margin-top:14px; width:100%; background:var(--panel2); border:0.5px solid var(--line); color:var(--hi);
-    border-radius:8px; padding:9px; font-family:'Rajdhani',sans-serif; font-weight:600; cursor:pointer;
+    border-radius:8px; padding:9px; font-family:'Rajdhani',sans-serif; font-weight:600; font-size:13.5px; cursor:pointer;
   }
   .wheelspin-import-note{font-size:12.5px; color:var(--lo); line-height:1.5; margin-bottom:16px;}
   .wheelspin-import-actions{display:flex; gap:8px;}
@@ -869,9 +884,9 @@
     .spin-bulk button{flex:1;}
     .spin-search{min-width:0;}
     .spin-body{flex-direction:column;}
-    .spin-legend{
-      position:static; width:100%; flex-direction:row; flex-wrap:wrap; align-items:center;
-      justify-content:flex-start; gap:12px;
+    .spin-legend{position:static; width:100%;}
+    .spin-legend-body{
+      flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:flex-start; gap:12px;
     }
     .spin-legend-item{white-space:nowrap;}
     .spin-groups{display:flex; flex-direction:column;}
@@ -894,7 +909,7 @@
       </button>
       <div>
         <h1>Motorpool</h1>
-        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.24</span></div>
+        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.24f10</span></div>
       </div>
     </div>
   </div>
@@ -1147,8 +1162,11 @@
       </div>
     </section>
     <div class="spin-body">
-      <div class="spin-legend" id="spinLegend" aria-label="Spin and unlock legend"></div>
       <div class="spin-groups" id="spinGroups"></div>
+      <div class="spin-legend" id="spinLegend" aria-label="Spin and unlock legend">
+        <div class="spin-legend-head">Key</div>
+        <div class="spin-legend-body" id="spinLegendBody"></div>
+      </div>
     </div>
   </div>
   </div>
@@ -2838,7 +2856,7 @@ function createSpinPerkIcon(perk){
 }
 
 function renderSpinLegend(){
-  const legend = document.getElementById("spinLegend");
+  const legend = document.getElementById("spinLegendBody");
   if(!legend) return;
   legend.innerHTML = "";
   ["unlock","regular","regular3","super"].forEach(perk => {
@@ -3093,10 +3111,16 @@ function switchTabWithSlide(targetButton){
     currentPanel.classList.remove(outClass);
     targetPanel.style.display = "";
     targetPanel.classList.add(inClass);
+    // The legend rides the exact same slide-in animation as the panel it
+    // lives in, applied at the exact same moment -- see the CSS comment on
+    // .spin-legend for why this beats giving it a separate timed fade-in.
+    const legend = document.getElementById("spinLegend");
+    if(targetTab === "spins" && legend) legend.classList.add(inClass);
     tabVisualState = targetTab;
   }, 220);
   tabEndTimer = window.setTimeout(()=>{
     targetPanel.classList.remove(inClass);
+    document.getElementById("spinLegend")?.classList.remove(inClass);
     tabs.classList.remove("is-switching");
     tabTransitioning = false;
     tabSwapTimer = 0;
