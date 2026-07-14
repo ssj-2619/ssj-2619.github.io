@@ -700,6 +700,9 @@
     min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; color:var(--hi);
   }
+  .spin-group-title-complete{
+    color:#77837E; text-decoration:line-through; text-decoration-thickness:1px;
+  }
   .spin-group-count{
     flex:none; font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.05em;
     text-transform:uppercase; color:var(--lo);
@@ -891,7 +894,7 @@
       </button>
       <div>
         <h1>Motorpool</h1>
-        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.23</span></div>
+        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.24</span></div>
       </div>
     </div>
   </div>
@@ -2921,6 +2924,11 @@ function renderSuperWheelspinCars(){
     caret.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 4 4 4-4"></path></svg>`;
     const title = document.createElement("span");
     title.className = "spin-group-title";
+    // Struck through once every car in the brand is checked off -- gives an
+    // at-a-glance "fully collected" signal without having to open the group
+    // or read the "N cars" count.
+    const brandFullyOwned = group.cars.every(car => ownedWheelspinCars.has(spinCarName(car)));
+    if(brandFullyOwned) title.classList.add("spin-group-title-complete");
     title.textContent = group.title;
     headingMain.appendChild(caret);
     headingMain.appendChild(title);
