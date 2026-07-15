@@ -544,7 +544,7 @@
   table.cov td.cell.has1{background:#103B30; color:#7FE8C8;}
   table.cov td.cell.has2{background:#0E5C45; color:#B9FFE0;}
   .legend{
-    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
     margin-top:12px; font-size:11px; font-family:'JetBrains Mono',monospace;
     letter-spacing:.02em; color:var(--lo);
   }
@@ -782,23 +782,27 @@
     background:var(--panel); border:0.5px solid var(--line); border-radius:11px;
     color:var(--lo); font-size:13px;
   }
+  .spin-legend-inline{
+    display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:14px;
+    margin:14px 0; padding:10px 13px;
+    background:var(--panel); border:0.5px solid var(--line); border-radius:11px;
+    color:var(--lo); font-size:11px;
+  }
+  .spin-legend-inline-body{display:flex; align-items:center; flex-wrap:wrap; gap:14px;}
+  .spin-legend-inline .spin-legend-item{white-space:nowrap;}
   .spin-legend{
     position:sticky; top:22vh; z-index:2; flex:none; width:180px;
     background:var(--panel); border:0.5px solid var(--line); border-radius:11px;
     overflow:hidden;
+    opacity:0; transform:translateY(-8px); pointer-events:none;
+    transition:opacity .22s ease, transform .22s ease;
   }
-  /* Rather than giving the legend its own separately-timed fade-in and
-     trying to match it to the tab panel's animation duration/easing, it
-     gets the exact same panel-slide-in-* class applied to it (see
-     switchTabWithSlide) -- same @keyframes, same timing, so there's
-     nothing to keep in sync in the first place. */
-  .spin-legend.panel-slide-in-right{animation:gaugeSlideInRight .36s cubic-bezier(.2,.8,.2,1) both;}
-  .spin-legend.panel-slide-in-left{animation:gaugeSlideInLeft .36s cubic-bezier(.2,.8,.2,1) both;}
-  .spin-legend-head{
-    padding:11px 13px; background:var(--panel2); border-bottom:0.5px solid var(--line);
-    font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700; letter-spacing:.04em;
-    text-transform:uppercase; color:var(--lo);
-  }
+  /* Visibility is driven purely by scroll position (see updateSpinLegendAnchor):
+     it appears once .spin-legend-inline has scrolled out of view above, so it
+     no longer rides the tab's own slide-in animation like it used to -- that
+     choreography assumed it was always shown the instant the tab settled,
+     which is no longer true now that it's conditionally hidden by default. */
+  .spin-legend.is-visible{opacity:1; transform:translateY(0); pointer-events:auto;}
   .spin-legend-body{
     display:flex; flex-direction:column; gap:10px;
     padding:12px; color:var(--lo); font-size:11px;
@@ -811,7 +815,7 @@
 
   @media (prefers-reduced-motion:reduce){
     .tab-panel{animation:none;}
-    .spin-legend{animation:none;}
+    .spin-legend{transition:none;}
     .spin-group-body,
     .spin-caret,
     .custom-select-menu,
@@ -884,11 +888,7 @@
     .spin-bulk button{flex:1;}
     .spin-search{min-width:0;}
     .spin-body{flex-direction:column;}
-    .spin-legend{position:static; width:100%;}
-    .spin-legend-body{
-      flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:flex-start; gap:12px;
-    }
-    .spin-legend-item{white-space:nowrap;}
+    .spin-legend{display:none;}
     .spin-groups{display:flex; flex-direction:column;}
     .spin-column{display:contents;}
     .spin-group{order:var(--brand-order);}
@@ -909,7 +909,7 @@
       </button>
       <div>
         <h1>Motorpool</h1>
-        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.24f10</span></div>
+        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.26f4</span></div>
       </div>
     </div>
   </div>
@@ -1161,10 +1161,12 @@
         </div>
       </div>
     </section>
+    <div class="spin-legend-inline" id="spinLegendInline" aria-label="Spin and unlock legend">
+      <div class="spin-legend-inline-body" id="spinLegendInlineBody"></div>
+    </div>
     <div class="spin-body">
       <div class="spin-groups" id="spinGroups"></div>
-      <div class="spin-legend" id="spinLegend" aria-label="Spin and unlock legend">
-        <div class="spin-legend-head">Key</div>
+      <div class="spin-legend" id="spinLegend" aria-label="Spin and unlock legend" aria-hidden="true">
         <div class="spin-legend-body" id="spinLegendBody"></div>
       </div>
     </div>
@@ -2856,17 +2858,46 @@ function createSpinPerkIcon(perk){
 }
 
 function renderSpinLegend(){
-  const legend = document.getElementById("spinLegendBody");
-  if(!legend) return;
-  legend.innerHTML = "";
-  ["unlock","regular","regular3","super"].forEach(perk => {
-    const meta = SPIN_PERK_META[perk];
-    const item = document.createElement("span");
-    item.className = "spin-legend-item";
-    item.appendChild(createSpinPerkIcon(perk));
-    item.appendChild(document.createTextNode(meta.label));
-    legend.appendChild(item);
+  const targets = [
+    document.getElementById("spinLegendBody"),
+    document.getElementById("spinLegendInlineBody")
+  ].filter(Boolean);
+  if(!targets.length) return;
+  targets.forEach(legend => {
+    legend.innerHTML = "";
+    ["unlock","regular","regular3","super"].forEach(perk => {
+      const meta = SPIN_PERK_META[perk];
+      const item = document.createElement("span");
+      item.className = "spin-legend-item";
+      item.appendChild(createSpinPerkIcon(perk));
+      item.appendChild(document.createTextNode(meta.label));
+      legend.appendChild(item);
+    });
   });
+}
+
+// The floating "Key" box starts hidden (see .spin-legend base CSS) and only
+// appears once .spin-legend-inline -- the single-row legend that sits right
+// above the brand list -- has scrolled fully above the viewport. This keeps
+// the two from ever being visible at the same time: one explains the icons
+// while they're still in view up top, the other takes over as a reminder
+// once that explanation has scrolled away.
+function updateSpinLegendAnchor(){
+  const inline = document.getElementById("spinLegendInline");
+  const anchor = document.getElementById("spinLegend");
+  if(!inline || !anchor) return;
+  const scrolledPast = inline.getBoundingClientRect().bottom < 0;
+  anchor.classList.toggle("is-visible", scrolledPast);
+  anchor.setAttribute("aria-hidden", scrolledPast ? "false" : "true");
+}
+
+let spinLegendObserver = null;
+function initSpinLegendAnchor(){
+  const inline = document.getElementById("spinLegendInline");
+  if(!inline || spinLegendObserver) return;
+  spinLegendObserver = new IntersectionObserver(updateSpinLegendAnchor, {threshold:0});
+  spinLegendObserver.observe(inline);
+  window.addEventListener("resize", updateSpinLegendAnchor);
 }
 
 function splitSpinGroupsIntoBalancedColumns(groups){
@@ -2901,6 +2932,7 @@ function renderSuperWheelspinCars(){
     : `${totalCount} cars | ${ownedCount} collected`;
   list.innerHTML = "";
   renderSpinLegend();
+  initSpinLegendAnchor();
 
   if(visibleCount === 0){
     const empty = document.createElement("div");
@@ -3099,7 +3131,7 @@ function switchTabWithSlide(targetButton){
     currentPanel.style.display = "none";
     targetPanel.style.display = "";
     tabVisualState = targetTab;
-    if(targetTab === "spins") tabStage.classList.add("spins-settled");
+    if(targetTab === "spins"){ tabStage.classList.add("spins-settled"); updateSpinLegendAnchor(); }
     return;
   }
 
@@ -3111,16 +3143,11 @@ function switchTabWithSlide(targetButton){
     currentPanel.classList.remove(outClass);
     targetPanel.style.display = "";
     targetPanel.classList.add(inClass);
-    // The legend rides the exact same slide-in animation as the panel it
-    // lives in, applied at the exact same moment -- see the CSS comment on
-    // .spin-legend for why this beats giving it a separate timed fade-in.
-    const legend = document.getElementById("spinLegend");
-    if(targetTab === "spins" && legend) legend.classList.add(inClass);
+    if(targetTab === "spins") updateSpinLegendAnchor();
     tabVisualState = targetTab;
   }, 220);
   tabEndTimer = window.setTimeout(()=>{
     targetPanel.classList.remove(inClass);
-    document.getElementById("spinLegend")?.classList.remove(inClass);
     tabs.classList.remove("is-switching");
     tabTransitioning = false;
     tabSwapTimer = 0;
