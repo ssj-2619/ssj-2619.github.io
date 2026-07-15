@@ -184,7 +184,7 @@
   .ignition-btn:hover{border-color:#5A3138;}
   .ignition-btn:active{transform:scale(.92);}
   .ignition-btn:focus-visible{outline:2px solid var(--cyan); outline-offset:3px;}
-  .ignition-btn:disabled{cursor:wait;}
+  .ignition-btn:disabled{cursor:not-allowed;}
   .ignition-btn.lit{
     border-color:#FF3B30;
     box-shadow:inset 0 2px 4px rgba(0,0,0,.6), inset 0 -1px 0 rgba(255,255,255,.04), 0 0 11px rgba(255,59,48,.5);
@@ -465,7 +465,7 @@
 
   /* ---------- garage list ---------- */
   .row{
-    display:grid; grid-template-columns:1.6fr 52px 132px 1fr 52px; align-items:center; gap:12px;
+    display:grid; grid-template-columns:1.6fr 52px 132px 1fr 78px; align-items:center; gap:12px;
     padding:11px 5px 11px 13px; border:0.5px solid transparent; border-bottom-color:var(--line);
     border-radius:7px; position:relative; transition:background .15s ease, border-color .15s ease;
   }
@@ -507,14 +507,32 @@
     box-shadow:inset 0 -1px 0 rgba(0,0,0,.18), 0 1px 2px rgba(0,0,0,.25);
   }
   .row-actions{grid-column:5; display:flex; align-items:center; justify-content:flex-end; gap:2px;}
-  .editbtn, .delbtn{
+  .editbtn, .delbtn, .flagbtn{
     background:none; border:none; color:#8A8C96; cursor:pointer; padding:4px;
     line-height:1; display:flex; align-items:center; justify-content:center;
     border-radius:6px; transition:background .12s ease, color .12s ease;
   }
-  .editbtn svg, .delbtn svg{width:16px; height:16px; display:block;}
+  .editbtn svg, .delbtn svg, .flagbtn svg{width:16px; height:16px; display:block;}
   .editbtn:hover{color:var(--cyan); background:rgba(45,226,214,.1);}
   .delbtn:hover{color:var(--magenta); background:rgba(255,45,135,.1);}
+  .flagbtn:hover{color:#FF5A3C; background:rgba(255,90,60,.1);}
+  /* Filled/active once a car is marked "set aside" -- stays visually on
+     regardless of hover, unlike edit/delete which are only ever momentary
+     actions. */
+  .flagbtn.active{color:#FF5A3C; background:rgba(255,90,60,.16);}
+  .flagbtn.active svg{fill:currentColor;}
+  /* Persistent version of the same hover-glow language every row already
+     uses (faint background tint + colored left accent bar via
+     --row-accent/.row::before) -- except this one doesn't need :hover to
+     show, and it overrides the race color with a dedicated warning red so
+     "set aside" reads as its own state rather than just another race
+     color. Cars marked this way stay visible in the list (nothing is
+     deleted) but are excluded from the dashboard % and Coverage grid --
+     see countCovered() and renderGrid(). */
+  .row.disliked{background:rgba(255,90,60,.055); border-color:rgba(255,90,60,.22);}
+  .row.disliked:hover{background:rgba(255,90,60,.09);}
+  .row.disliked::before{background:#FF5A3C; opacity:.7;}
+  .row.disliked:hover::before{opacity:.9;}
   .empty{
     text-align:center; padding:40px 20px; color:var(--lo); font-size:14px;
   }
@@ -543,6 +561,11 @@
   table.cov td.cell.target{box-shadow:inset 0 0 0 1px rgba(255,182,39,.9);}
   table.cov td.cell.has1{background:#103B30; color:#7FE8C8;}
   table.cov td.cell.has2{background:#0E5C45; color:#B9FFE0;}
+  /* align-items:flex-start is intentional -- "Horizon Play" sits level with
+     the first legend-keys row ("no car yet"), not centered against the
+     whole 3-row block. This was flipped to center during a routine
+     aesthetic-consistency pass and then explicitly reverted -- don't
+     "fix" it again on a future pass without an actual reason to revisit it. */
   .legend{
     display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
     margin-top:12px; font-size:11px; font-family:'JetBrains Mono',monospace;
@@ -892,7 +915,7 @@
     .spin-groups{display:flex; flex-direction:column;}
     .spin-column{display:contents;}
     .spin-group{order:var(--brand-order);}
-    .row{grid-template-columns:minmax(0,1fr) 42px 112px 52px; gap:7px;}
+    .row{grid-template-columns:minmax(0,1fr) 42px 112px 78px; gap:7px;}
     .row .note{display:none;}
     .row-actions{grid-column:4;}
   }
@@ -909,7 +932,7 @@
       </button>
       <div>
         <h1>Motorpool</h1>
-        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.26f4</span></div>
+        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.27f5</span></div>
       </div>
     </div>
   </div>
@@ -1662,6 +1685,7 @@ const SHARE_SETUP_VERSION = 2;
 const FH6_CAR_API_URL = "https://forza.fandom.com/api.php?action=parse&page=Forza_Horizon_6/Cars&prop=wikitext&format=json&origin=*";
 const X_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>`;
 const PENCIL_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path><path d="m15 5 4 4"></path></svg>`;
+const FLAG_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17s1-1 4-1 5 2 8 2 4-1 4-1V5s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="20" x2="4" y2="17"></line></svg>`;
 const CHECK_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"></path></svg>`;
 
 let cars = [];
@@ -1704,6 +1728,20 @@ function normalizeCarSearch(value){
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
+}
+
+// Collapses a burst of rapid calls (typing, paste, autofill) into one call
+// `wait`ms after the last one -- used for the two search-as-you-type
+// inputs (car name autocomplete, Spins & Unlocks search), whose full
+// re-render measured ~5-7ms each on this machine even with a modest
+// dataset; on slower hardware or the full ~700-car FH6 roster that's
+// enough per keystroke to visibly compete with the 16ms frame budget.
+function debounce(fn, wait){
+  let timer = null;
+  return function(...args){
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), wait);
+  };
 }
 
 function carSearchScore(car, query){
@@ -1789,7 +1827,8 @@ function load(){
         name: migratedName,
         cls: car.cls,
         race: car.race,
-        note: typeof car.note === "string" ? car.note : ""
+        note: typeof car.note === "string" ? car.note : "",
+        disliked: Boolean(car.disliked)
       };
     });
     if(clean.length !== stored.length){
@@ -1846,8 +1885,7 @@ function applySpinGroupCollapseState(section, brand, collapsed){
 }
 
 function findRenderedSpinGroup(brand){
-  return [...document.querySelectorAll(".spin-group")]
-    .find(section => section.querySelector(".spin-group-title")?.textContent.trim() === brand);
+  return document.querySelector(`.spin-group[data-brand="${CSS.escape(brand)}"]`);
 }
 
 function toggleSpinBrandCollapsed(brand){
@@ -1866,7 +1904,7 @@ function setAllSpinBrandsCollapsed(collapsed){
   else brandGroups.forEach(group => collapsedSpinBrands.delete(group.title));
   saveCollapsedSpinBrands();
   document.querySelectorAll(".spin-group").forEach(section => {
-    const brand = section.querySelector(".spin-group-title")?.textContent.trim();
+    const brand = section.dataset.brand;
     if(brand) applySpinGroupCollapseState(section, brand, collapsed);
   });
 }
@@ -1955,7 +1993,8 @@ function createSetupFilePayload(){
         name:completedName,
         cls:String(car.cls || ""),
         race:String(car.race || ""),
-        note:String(car.note || "")
+        note:String(car.note || ""),
+        disliked:Boolean(car.disliked)
       };
     }),
     ownedWheelspin:[...ownedWheelspinCars]
@@ -2067,7 +2106,8 @@ function normalizeSharedSetup(payload){
       name:Array.isArray(car) ? car[0] : null,
       cls:Array.isArray(car) ? car[1] : null,
       race:Array.isArray(car) ? car[2] : null,
-      note:Array.isArray(car) ? car[3] : null
+      note:Array.isArray(car) ? car[3] : null,
+      disliked:Array.isArray(car) ? Boolean(car[4]) : false
     }));
   }else if(payload.version === 1 && Array.isArray(payload.cars)){
     rawCars = payload.cars;
@@ -2085,7 +2125,8 @@ function normalizeSharedSetup(payload){
       name:car.name.trim(),
       cls:car.cls,
       race:car.race,
-      note:car.note
+      note:car.note,
+      disliked:Boolean(car.disliked)
     };
   });
 }
@@ -2490,8 +2531,10 @@ function countCovered(){
   // combinations that have at least one car in a single pass over `cars`,
   // then just check the set's size against the target combos -- instead of
   // re-scanning the whole array once per race/class pair (48 scans).
+  // Cars marked disliked are skipped entirely -- see .row.disliked -- so a
+  // car someone tried and didn't like doesn't silently count as "covered".
   const covered = new Set();
-  cars.forEach(car=>{ covered.add(car.race + "|" + car.cls); });
+  cars.forEach(car=>{ if(!car.disliked) covered.add(car.race + "|" + car.cls); });
   let n = 0;
   RACE_ORDER.forEach(r=>CLASS_ORDER.forEach(c=>{
     if(covered.has(r + "|" + c)) n++;
@@ -2584,7 +2627,14 @@ function startCarEdit(id){
   syncNameClearButton();
   renderList();
   const input = document.getElementById("newName");
-  input.focus();
+  // Explicit scroll instead of relying on focus()'s own browser-default
+  // scroll-into-view: that only reliably scrolls when the target is below
+  // the viewport, not when the list has been scrolled down and the edit
+  // form (pinned near the top of the tab) is now above it. preventScroll
+  // stops the browser from doing its own scroll on top of this one.
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.querySelector(".addrow").scrollIntoView({behavior: reduceMotion ? "auto" : "smooth", block: "center"});
+  input.focus({preventScroll: true});
   input.setSelectionRange(input.value.length, input.value.length);
 }
 
@@ -2655,7 +2705,7 @@ function renderList(){
   // far better if someone's garage grows toward the game's full roster.
   const fragment = document.createDocumentFragment();
   list.forEach(c=>{
-    const row = document.createElement("div"); row.className="row";
+    const row = document.createElement("div"); row.className="row" + (c.disliked ? " disliked" : "");
     row.style.setProperty("--row-accent", RACE_COLOR[c.race] || "transparent");
     if(c.id === editingCarId) row.classList.add("editing");
     const name = document.createElement("div"); name.className="name";
@@ -2688,6 +2738,16 @@ function renderList(){
     raceB.style.backgroundColor=RACE_COLOR[c.race]; raceB.style.color="#fff";
     const note = document.createElement("div"); note.className="note"; note.textContent=c.note||"";
     const actions = document.createElement("div"); actions.className="row-actions";
+    const flag = document.createElement("button"); flag.className="flagbtn" + (c.disliked ? " active" : "");
+    flag.innerHTML=FLAG_ICON;
+    flag.setAttribute("aria-pressed", String(Boolean(c.disliked)));
+    flag.setAttribute("aria-label", (c.disliked ? "Unmark " : "Mark ") + c.name + " as set aside");
+    flag.title = c.disliked ? "Set aside -- not counted toward coverage. Click to unmark." : "Mark as set aside (tried it, don't like it) -- excludes it from coverage";
+    flag.onclick = ()=>{
+      c.disliked = !c.disliked;
+      save();
+      renderAll();
+    };
     const edit = document.createElement("button"); edit.className="editbtn"; edit.innerHTML=PENCIL_ICON;
     edit.setAttribute("aria-label", "Edit " + c.name);
     edit.onclick = ()=>startCarEdit(c.id);
@@ -2699,6 +2759,7 @@ function renderList(){
       save();
       renderAll();
     };
+    actions.appendChild(flag);
     actions.appendChild(edit);
     actions.appendChild(del);
     row.appendChild(name); row.appendChild(clsB); row.appendChild(raceB); row.appendChild(note); row.appendChild(actions);
@@ -2723,9 +2784,11 @@ function renderGrid(){
   // reading from it while building the 48 grid cells, replaces what used to
   // be 48 separate cars.filter() scans (one per race/class cell, each
   // walking the entire cars array) with one scan total. Same result, much
-  // less redundant work as the garage grows.
+  // less redundant work as the garage grows. Disliked cars are skipped here
+  // too, same reasoning as countCovered().
   const carsByRaceClass = new Map();
   cars.forEach(car=>{
+    if(car.disliked) return;
     const key = car.race + "|" + car.cls;
     const bucket = carsByRaceClass.get(key);
     if(bucket) bucket.push(car);
@@ -2958,6 +3021,7 @@ function renderSuperWheelspinCars(){
     const isCollapsed = collapsedSpinBrands.has(group.title);
     const section = document.createElement("section");
     section.className = "spin-group";
+    section.dataset.brand = group.title;
     if(isCollapsed) section.classList.add("is-collapsed");
     section.style.setProperty("--brand-order", groupIndex);
     const heading = document.createElement("button");
@@ -3169,7 +3233,7 @@ document.querySelectorAll(".tab").forEach(t=>{
 document.getElementById("fRace").onchange = (e)=>{ filterRace = e.target.value; renderList(); renderChips(); };
 document.getElementById("fClass").onchange = (e)=>{ filterClass = e.target.value; renderList(); renderChips(); };
 document.getElementById("fSort").onchange = (e)=>{ carSort = e.target.value; renderList(); };
-document.getElementById("spinSearch").addEventListener("input", renderSuperWheelspinCars);
+document.getElementById("spinSearch").addEventListener("input", debounce(renderSuperWheelspinCars, 120));
 document.querySelectorAll("[data-spin-filter]").forEach(button => {
   button.addEventListener("click", ()=>{
     wheelspinCollectionFilter = button.dataset.spinFilter;
@@ -3292,8 +3356,10 @@ function stopEngine(){
   });
 
   requestAnimationFrame(()=>{
-    needleRpm.style.transform = "translate(50px,50px) rotate(-110deg) translate(-50px,-50px)";
-    needleFuel.style.transform = "translate(50px,50px) rotate(-110deg) translate(-50px,-50px)";
+    requestAnimationFrame(()=>{
+      needleRpm.style.transform = "translate(50px,50px) rotate(-110deg) translate(-50px,-50px)";
+      needleFuel.style.transform = "translate(50px,50px) rotate(-110deg) translate(-50px,-50px)";
+    });
   });
 
   setTimeout(()=>{
@@ -3315,11 +3381,14 @@ document.getElementById("ignitionBtn").onclick = ()=>{
   else startEngine();
 };
 document.getElementById("clearName").innerHTML = X_ICON;
+const debouncedNameSuggestions = debounce(()=>{
+  renderCarSuggestions();
+  updateClassFromName();
+}, 120);
 document.getElementById("newName").addEventListener("input", ()=>{
   activeSuggestionIndex = -1;
   syncNameClearButton();
-  renderCarSuggestions();
-  updateClassFromName();
+  debouncedNameSuggestions();
 });
 document.getElementById("newName").addEventListener("change", updateClassFromName);
 document.getElementById("newName").addEventListener("keydown", (e)=>{
