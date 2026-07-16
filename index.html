@@ -945,7 +945,7 @@
         <!-- Versioning: major.minor bumps for scope (new tab/capability = +0.1,
              smaller info-panel-scale feature = +0.01), small tweaks/fixes append
              or increment a _N suffix on the current version (e.g. this build). -->
-        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.11_1</span></div>
+        <div class="sub">FH6 COVERAGE TRACKER <span class="build-tag">v1.11_2</span></div>
       </div>
     </div>
   </div>
@@ -2813,7 +2813,7 @@ function renderList(){
     flag.appendChild(iconNode(FLAG_ICON));
     flag.setAttribute("aria-pressed", String(Boolean(c.disliked)));
     flag.setAttribute("aria-label", (c.disliked ? "Unmark " : "Mark ") + c.name + " as set aside");
-    flag.title = c.disliked ? "Set aside -- not counted toward coverage. Click to unmark." : "Mark as set aside (tried it, don't like it) -- excludes it from coverage";
+    flag.title = "Mark";
     flag.onclick = ()=>{
       c.disliked = !c.disliked;
       save();
@@ -2821,9 +2821,11 @@ function renderList(){
     };
     const edit = document.createElement("button"); edit.className="editbtn"; edit.appendChild(iconNode(PENCIL_ICON));
     edit.setAttribute("aria-label", "Edit " + c.name);
+    edit.title = "Edit";
     edit.onclick = ()=>startCarEdit(c.id);
     const del = document.createElement("button"); del.className="delbtn"; del.appendChild(iconNode(X_ICON));
     del.setAttribute("aria-label", "Delete " + c.name);
+    del.title = "Delete";
     del.onclick = ()=>{
       cars = cars.filter(x=>x.id!==c.id);
       if(editingCarId === c.id) leaveCarEditMode(false);
