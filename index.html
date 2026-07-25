@@ -14,16 +14,24 @@
     --hi:#F4F5F7; --lo:#85878F; --dim:#4D4F58;
     /* One column track shared by the garage list AND the add form above it,
        so the class/race controls in the form sit directly over the class/race
-       badges in the list -- they used to be a flex row and a grid that never
-       lined up. The class column (48px) is sized for the dropdown and the
-       24px square badge centres in it; the race column (116px) is sized for
-       the widest race dropdown ("Cross-Country") and the badge fills it.
-       Only these two middle tracks are fixed, so they stay pinned while the
-       name and note columns flex with the viewport. The add form's last track
-       is `auto` (not 82px) so "Save changes"+"Cancel" can grow while editing
-       without disturbing the aligned class/race columns. */
-    --garage-cols: minmax(0,1.6fr) 48px 116px minmax(0,1fr) 82px;
-    --garage-cols-form: minmax(0,1.6fr) 48px 116px minmax(0,1fr) auto;
+       badges in the list. Both use --garage-cols; a track that differed
+       between them would not just move that one column, it would change how
+       much width is left for the flexible name track and shift the whole row.
+       Class 64px and race 144px are sized for the form's DROPDOWNS (13px
+       Inter), not the list's badges (11px JetBrains Mono) -- the two fonts
+       measure differently, so the width that just fits one does not fit the
+       other. Race carries the longest label, "Cross-Country" (91px of ink),
+       with ~27px of slack rather than the hairline 8px it had at 132px.
+       The action track is 82px: exactly the natural width of "Add car"
+       (81.5px measured), so the button is its own size instead of a stretched
+       bar, and the list's three action icons (80px) fit the same track.
+       Name takes 2.4 parts to the note's 1, which at the 992px shell means
+       443px of name -- clearing the 99th percentile (397px) of the 623-car
+       database -- against 185px of note, ample for the short tags notes
+       actually hold. Both stay fr rather than fixed so they give way together
+       on a narrow viewport; pinning the note to a fixed 185px instead starved
+       the name down to 17px at 600px wide. */
+    --garage-cols: minmax(0,2.4fr) 64px 144px minmax(0,1fr) 82px;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
@@ -48,7 +56,7 @@
       repeating-linear-gradient(-45deg, rgba(255,255,255,.02) 0px, rgba(255,255,255,.02) 1px, transparent 1px, transparent 7px),
       radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.035), transparent 60%);
   }
-  .shell{max-width:920px; margin:0 auto;}
+  .shell{max-width:992px; margin:0 auto;}
   h1,h2,h3{font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:.01em;}
 
   /* ---------- header ---------- */
@@ -134,9 +142,14 @@
   @media (prefers-reduced-motion:reduce){
     .gauge-slot{transition:none;}
   }
+  /* The 44px top padding here existed to keep the cluster clear of the
+     ignition button, back when that button was anchored to this card's own
+     top-right corner. The button now lives on the cluster itself, so that
+     reservation is just dead space -- and an unbalanced one, leaving 45px
+     above the cluster against 19px below the telltales. */
   .gauge-card{
     background:var(--panel); border:0.5px solid var(--line); border-radius:16px;
-    padding:44px 24px 18px; display:flex; flex-direction:column; align-items:center;
+    padding:22px 24px 18px; display:flex; flex-direction:column; align-items:center;
     position:relative;
   }
   @keyframes gaugeSlideOutLeft{
@@ -155,34 +168,55 @@
     from{opacity:0; transform:translateX(-48px) scale(.985); filter:blur(2px);}
     to{opacity:1; transform:translateX(0) scale(1); filter:blur(0);}
   }
+  /* Height is fixed rather than auto so the collapse/expand animation on
+     .gauge-slot has a stable target and the card doesn't reflow mid-transition
+     -- it has to be re-measured whenever the cluster's own size changes. */
   .gauge-content{
     display:grid; grid-template-columns:1fr; align-items:center; gap:12px;
-    width:100%; max-width:800px; height:236px;
+    width:100%; max-width:800px; height:265px;
   }
   .gauge-wrap{position:relative; width:100%; justify-self:center;}
+  /* Sized against the card it sits in, not in isolation: at the 992px shell a
+     620px cluster filled only 62% of the card and read as a small instrument
+     panel adrift in a large frame. 760px brings that to ~77% while still
+     leaving the card a visible margin, and the dials/speedo below grow with
+     it so the cluster gets genuinely bigger rather than just gaining padding. */
   .dash-cluster{
     position:relative; display:flex; align-items:center; justify-content:center;
-    width:100%; max-width:620px; margin:0 auto; gap:22px;
-    padding:20px 26px 16px; border-radius:28px;
+    width:100%; max-width:760px; margin:0 auto; gap:28px;
+    padding:22px 30px 18px; border-radius:28px;
     background:linear-gradient(180deg,#0B0C10 0%,#16171D 45%,#1A1B22 100%);
     box-shadow:
       inset 0 16px 26px -16px rgba(0,0,0,.9),
       inset 0 1px 0 rgba(255,255,255,.05),
       inset 0 -1px 0 rgba(0,0,0,.6),
       0 10px 24px -14px rgba(0,0,0,.7);
-    overflow:hidden;
   }
   .dash-cluster::before{
     content:""; position:absolute; left:8%; right:8%; top:0; height:1px;
     background:linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent);
   }
+  /* border-radius here instead of overflow:hidden on the parent. Both keep the
+     gloss inside the bezel's rounded corners, but the clip also cropped the
+     ignition button's lit halo now that the button sits on this panel. */
   .dash-cluster::after{
-    content:""; position:absolute; inset:0; pointer-events:none;
+    content:""; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
     background:linear-gradient(115deg, rgba(255,255,255,.05) 0%, transparent 28%);
   }
-  .speedo-main{position:relative; width:100%; max-width:248px; flex:none; z-index:1;}
+  /* Grows with .dash-cluster's max-width -- everything inside is viewBox SVG,
+     so widening these two is what actually scales the artwork. */
+  .speedo-main{position:relative; width:100%; max-width:300px; flex:none; z-index:1;}
 
-  .dial{width:112px; flex:none; display:flex; flex-direction:column; align-items:center; z-index:1;}
+  /* position:relative so the icon and label below can sit ON the dial face.
+     They used to be laid out under the pod as ordinary column children, which
+     made the .dial box ~30px taller than the pod itself -- and since the
+     cluster centres the BOXES, that extra height under each dial pushed the
+     dial faces ~12px above the speedo arc's centre and jammed them to within
+     8px of the bezel's top edge while 36px went unused at the bottom.
+     Taking them out of flow makes the box exactly the pod, so the two dial
+     faces and the arc centre on each other (within 3px) with even 23px above
+     and below -- and it is where a real instrument prints its legend anyway. */
+  .dial{width:140px; flex:none; display:flex; flex-direction:column; align-items:center; z-index:1; position:relative;}
   .dial-pod{
     position:relative; width:100%; border-radius:50%;
     background:radial-gradient(circle at 50% 38%, #1E1F27 0%, #131319 72%, #0E0F13 100%);
@@ -209,10 +243,19 @@
     transition:transform .7s cubic-bezier(.3,1,.4,1), fill .5s ease;
   }
   .dial-hub{fill:#E7E8EC;}
-  .dial-icon{width:13px; height:13px; color:#5C5F6B; margin-top:3px;}
+  /* Both sit in the empty wedge at the bottom of the face, below where the
+     track arc's two ends stop (y=64 in the 100-unit viewBox, i.e. 88.5px down
+     a 140px pod). The needle can't reach here either: it sweeps at most to
+     +108deg, which puts its tip at y=60.5 -- above the icon -- so nothing
+     passes over the legend even during the ignition sweep. */
+  .dial-icon{
+    position:absolute; top:64%; left:50%; transform:translateX(-50%);
+    width:13px; height:13px; color:#5C5F6B;
+  }
   .dial-label{
-    display:block; margin-top:1px; font-family:'JetBrains Mono',monospace; font-size:9px;
-    letter-spacing:.12em; color:#5C5F6B;
+    position:absolute; top:76%; left:50%; transform:translateX(-50%);
+    display:block; font-family:'JetBrains Mono',monospace; font-size:9px;
+    letter-spacing:.12em; color:#5C5F6B; white-space:nowrap;
   }
 
   .dash-cluster.engine-running .needle-rpm{fill:var(--amber);}
@@ -263,8 +306,12 @@
     88%{transform:translateX(1px);}
   }
 
+  /* Positioned against .dash-cluster (its offset parent -- see the markup).
+     The insets clear the cluster's overflow:hidden by more than the 11px reach
+     of the .lit glow below, so the button's halo isn't clipped when the engine
+     is running. */
   .ignition-btn{
-    position:absolute; top:12px; right:16px; z-index:2;
+    position:absolute; top:13px; right:15px; z-index:2;
     width:30px; height:30px; border-radius:50%; padding:0;
     background:radial-gradient(circle at 50% 35%, #1E1A1B 0%, #131011 75%);
     border:1.5px solid #3A2226; cursor:pointer;
@@ -385,12 +432,9 @@
   #filterChips{display:inline-flex; gap:8px; align-items:center; flex-wrap:wrap;}
   .custom-select[data-select-id="fSort"]{flex:0 0 170px; width:170px; min-width:170px;}
   .custom-select[data-select-id="fSort"] .custom-select-trigger{width:170px;}
-  /* Fixed width means a future, longer option label could wrap instead of
-     truncate -- clip with an ellipsis so the trigger's height never grows,
-     rather than relying on every option staying short enough to fit. */
-  .custom-select[data-select-id="fSort"] .custom-select-value{
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
-  }
+  /* A future, longer option label clips with an ellipsis (the base
+     .custom-select-value rule below) rather than wrapping, so the trigger's
+     170px width and height never grow to fit it. */
   /* Grouped into one flex item, the same way .addrow-actions groups
      Add/Cancel below -- without this, the label (pushed to the line-end by
      its own margin-left:auto) could end up stranded alone on one flex-wrap
@@ -475,16 +519,20 @@
      first/last cells below, so col 1 and col 5 reach the same left/right as
      the list rows (which sit flush to the panel with only their own 13px). */
   .addrow{
-    display:grid; grid-template-columns:var(--garage-cols-form); gap:12px; align-items:center;
+    display:grid; grid-template-columns:var(--garage-cols); gap:12px; align-items:center;
     background:var(--panel); border:0.5px solid var(--line);
     border-radius:12px; margin-bottom:16px; position:relative; z-index:5;
     box-shadow:inset 0 1px 0 rgba(45,226,214,.12);
-    /* Horizontal padding matches the list rows' 13px-left / 5px-right exactly
-       (rows are padding:12px 5px 12px 13px) so the two content boxes are the
-       same width and start at the same x -- otherwise the flexible name/note
-       columns absorb the few-px padding difference and the class/race tracks
-       drift out from under the badges by ~4px. */
-    padding:12px 5px 12px 13px;
+    /* Symmetric, and identical to the list rows' own padding -- the two
+       content boxes have to be the same width AND start at the same x or the
+       flexible name/note columns absorb the difference and the class/race
+       tracks drift out from under the badges. This was 13px-left / 5px-right:
+       the 5px was inherited from the list, where the action icons carry their
+       own 4px of button padding and so still look ~9px inset. The form's
+       "Add car" is a solid filled button with no such inset, so the same 5px
+       read as the button being jammed against the frame -- especially once it
+       stretched to fill its column. Both sides are 13px now. */
+    padding:12px 13px;
   }
   .name-field{position:relative; min-width:0;}
   .name-field input{width:100%;}
@@ -525,29 +573,35 @@
      needed -- just let them shrink (min-width:0) rather than forcing a
      120px floor that would blow out the fixed class/race columns. */
   .addrow input, .addrow .custom-select{min-width:0;}
-  /* The class/race dropdowns have to fit inside tracks (48/116px) narrower
-     than their default 58/148 -- trim the trigger's inner padding and the
-     value-to-caret gap so "S2" and "Cross-Country" still fit. */
+  /* Trim the trigger's inner padding and the value-to-caret gap so the class
+     and race dropdowns sit comfortably in their 64/144px tracks rather than
+     filling them edge to edge (see the --garage-cols comment). */
   .custom-select[data-select-id="newClass"] .custom-select-trigger,
   .custom-select[data-select-id="newRace"] .custom-select-trigger{
     padding-left:9px; padding-right:8px; gap:3px;
   }
-  /* Race type labels vary in length (e.g. "Cross-Country" is noticeably
-     wider than "Touge"), and the exact width depends on whichever font
-     actually loads -- clip with an ellipsis rather than letting the label
-     wrap, so the trigger's height stays fixed no matter what renders. */
-  .custom-select[data-select-id="newRace"] .custom-select-value{
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
+  /* Base rule for every custom-select's value text, not just newClass/newRace:
+     flex:1 so the value always claims exactly the space up to the caret --
+     without this, a flex item with no explicit basis just hugs its own text
+     width, and justify-content:space-between then has only ONE gap to absorb
+     all the leftover room, so the caret's effective offset shifts with
+     however wide the current value happens to be (visibly "jumping" between
+     e.g. "X" and "S2"). white-space/overflow/ellipsis is the same
+     never-wrap-clip-instead policy every dropdown value in this app already
+     needs (see the newRace-specific version this replaces) -- now it's the
+     default instead of something each new select has to opt into by hand. */
+  .custom-select-value{
+    flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
-  /* Grouping Add/Save and Cancel into one flex item keeps them from wrapping
-     apart from each other -- previously, whichever button ran out of room
-     first (usually Cancel, since it's last) would drop to its own line on
-     its own while its sibling stayed put, which read as broken rather than
-     as an intentional wrap. Wrapping now moves the whole action pair down
-     together, which still looks deliberate at any width. */
-  /* Last grid cell (col 5), right-aligned within it. margin-left:auto is gone
-     -- the grid track places it, not flex. */
-  .addrow-actions{display:flex; gap:8px; justify-self:end;}
+  /* Last grid cell (col 5). Each mode's track is sized to its own buttons'
+     natural width, so stretching to fill it is a no-op of half a pixel rather
+     than an inflated bar -- it just guarantees no gap can open up if a font
+     falls back to different metrics. .addbtn takes flex:1 so it absorbs any
+     such difference in BOTH states: alone in add mode, and beside a
+     natural-width Cancel while editing, where Save gives up the slack instead
+     of the pair overflowing the track. */
+  .addrow-actions{display:flex; gap:8px; justify-self:stretch;}
+  .addrow-actions .addbtn{flex:1;}
   .addrow input{
     height:36px; box-sizing:border-box;
     background:var(--panel2); color:var(--hi); border:0.5px solid var(--line); border-radius:8px;
@@ -563,6 +617,25 @@
   }
   .addbtn:hover{filter:brightness(1.1);}
   .addrow.editing{border-color:rgba(45,226,214,.42); background:rgba(45,226,214,.035);}
+  /* "Save"+"Cancel" (136.9px) needs 55px more than the 82px "Add car" track.
+     Rather than re-declaring the grid for edit mode -- which would re-split
+     the flexible space and drag the name column along with it -- the action
+     cell keeps its 82px track and simply overhangs to the left, and the note
+     input gives up the same 55px so the two never meet. The name, class and
+     race columns are untouched by both, so nothing left of the note moves
+     when editing starts. 55px = the 43px the buttons actually reach into the
+     note's cell, plus the 12px grid gap kept clear between them.
+     Scoped above 560px: below that the form has already stacked, the note and
+     the button pair each own a full-width row of their own, and there is no
+     82px track to overhang out of. */
+  @media (min-width:561px){
+    .addrow.editing .addrow-actions{width:137px; justify-self:end;}
+    .addrow.editing #newNote{width:calc(100% - 55px);}
+    .addrow-actions, .addrow #newNote{transition:width .18s cubic-bezier(.2,.8,.2,1);}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .addrow-actions, .addrow #newNote{transition:none;}
+  }
   .addrow.editing .addbtn{background:#39E7A8; color:#062016;}
   .cancel-edit{
     background:transparent; color:var(--lo); border:0.5px solid var(--line); border-radius:8px;
@@ -646,7 +719,10 @@
        the job -- it made the list read as a table rather than a garage.
        The border shorthand stays (transparent) because the editing and
        set-aside states light it up. */
-    padding:12px 5px 12px 13px; border:0.5px solid transparent;
+    /* Symmetric 13px, matching .addrow exactly -- see the note there for why
+       the two content boxes must stay identical, and why the old 5px right
+       was retired. */
+    padding:12px 13px; border:0.5px solid transparent;
     border-radius:7px; position:relative; transition:background .15s ease, border-color .15s ease;
   }
   /* Always on, not hover-only. This bar is the row's quietest way of carrying
@@ -716,7 +792,7 @@
      hard against the edges while the single letters had nearly twice the
      breathing room. 26 overshoots -- the square then stands taller than the
      race chip beside it and the pair stops reading as one unit. */
-  /* Centred in the 48px class track (which is sized for the dropdown above
+  /* Centred in the 64px class track (which is sized for the dropdown above
      it, not the square), so the square sits directly under that dropdown. */
   .badge-class{width:24px; flex:none; justify-self:center;}
   /* Outline variant -- fill, border and text colour are all set inline from
@@ -726,8 +802,10 @@
      label individually. Ragged chip ends left a gutter to the note column
      that changed on every row (36px after "Touge", 3px after
      "Cross-Country"), which is what made the notes read as unmoored. The
-     column is sized so the LONGEST label still only gets ~10px of cheek,
-     rather than the 23px it had back when this stretched to a 132px column. */
+     144px track this shares with the form (see --garage-cols) gives the
+     longest label ("Cross-Country") a comfortable ~10px of cheek, and every
+     shorter label gets more, centred, since the badge itself is width:100%
+     of the column. */
   .badge-race{
     width:100%; padding:0 9px;
     background-image:none; box-shadow:none;
@@ -742,7 +820,12 @@
      reads as a mistake rather than as intent, and a few pixels were never
      going to be the thing that prevents an accidental delete anyway. That
      belongs to a confirm or an undo, not to spacing. */
-  .row-actions{grid-column:5; display:flex; align-items:center; justify-content:flex-end; gap:4px;}
+  /* The -4px pulls the row back out over the row's own padding by exactly the
+     icon buttons' internal padding, so the last GLYPH -- not its invisible
+     button box -- ends on the same 13px inset as the name text opposite it
+     and as the "Add car" button's edge in the form above. Without it the
+     icons read as sitting 4px further in than everything else in the column. */
+  .row-actions{grid-column:5; display:flex; align-items:center; justify-content:flex-end; gap:4px; margin-right:-4px;}
   .editbtn, .delbtn, .flagbtn{
     background:none; border:none; color:#8A8C96; cursor:pointer; padding:4px;
     line-height:1; display:flex; align-items:center; justify-content:center;
@@ -976,17 +1059,18 @@
   }
   .spin-body{display:flex; align-items:flex-start; gap:14px;}
   /* On genuinely wide viewports, let the legend sit OUTSIDE the shell's own
-     920px content width instead of sharing/shrinking it -- this keeps the
+     992px content width instead of sharing/shrinking it -- this keeps the
      car-table area exactly as wide as it was before the sidebar existed,
      with the legend as pure extra width to its right, rather than the whole
      page effectively getting more cramped to make room for it. */
-  @media (min-width:1200px){
+  @media (min-width:1272px){
     /* Extra width is capped at whatever margin the centered .shell
-       (max-width:920px) actually has free on the current viewport. A flat
-       194px here overflows the page (forces a horizontal scrollbar) on any
-       viewport narrower than ~1340px -- min-width:1200px alone doesn't rule
-       that out, it just says "wide enough to try growing at all". */
-    .spin-body{width:calc(100% + min(194px, (100vw - 972px) / 2));}
+       (max-width:992px) actually has free on the current viewport: 992 + the
+       body's own 16px side padding a side, plus 20px of slack. A flat 194px
+       here overflows the page (forces a horizontal scrollbar) on any viewport
+       narrower than ~1432px -- min-width:1272px alone doesn't rule that out,
+       it just says "wide enough to try growing at all". */
+    .spin-body{width:calc(100% + min(194px, (100vw - 1044px) / 2));}
   }
   .spin-groups{flex:1; min-width:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
   .spin-column{display:flex; flex-direction:column; gap:10px;}
@@ -1212,7 +1296,12 @@
        having to shorten the label into something less descriptive. */
     .gauge-num{top:62%;}
     .gauge-num .cap{font-size:9px; letter-spacing:.04em; white-space:nowrap;}
-    .gauge-card{padding:34px 16px 16px;}
+    .gauge-card{padding:18px 16px 16px;}
+    /* The cluster is only ~210px wide here, so the button's desktop 13/15px
+       inset put it over the dial face rather than beside it. Tucking it right
+       into the corner keeps it clear of the arc, which never reaches there. */
+    .ignition-btn{top:6px; right:6px; width:26px; height:26px;}
+    .ignition-btn svg{width:12px; height:12px;}
     .surface-summary-top{align-items:flex-start; flex-direction:column; gap:12px;}
     .surface-numbers{width:100%; justify-content:space-between;}
     .dirt-route-list{grid-template-columns:1fr;}
@@ -1263,8 +1352,10 @@
     .addrow .custom-select[data-select-id="newClass"]{grid-column:1;}
     .addrow .custom-select[data-select-id="newRace"]{grid-column:2;}
     .addrow #newNote{grid-column:1 / -1;}
-    .addrow-actions{grid-column:1 / -1; justify-self:stretch;}
-    .addrow-actions .addbtn{flex:1;}
+    /* Only the column span is phone-specific now -- justify-self:stretch and
+       the button's own flex:1 are the desktop defaults too (see
+       .addrow-actions above), so they no longer need repeating here. */
+    .addrow-actions{grid-column:1 / -1;}
   }
 </style>
 </head>
@@ -1285,7 +1376,7 @@
         <!-- Versioning: major.minor bumps for scope (new tab/capability = +0.1,
              smaller info-panel-scale feature = +0.01), small tweaks/fixes append
              or increment a _N suffix on the current version (e.g. this build). -->
-        <span class="build-tag">v1.16_4</span>
+        <span class="build-tag">v1.16_15</span>
       </div>
       <div class="sub">A CAR TRACKER FOR FORZA HORIZON 6</div>
     </div>
@@ -1298,12 +1389,18 @@
        change reads as the panel making room, not as the page jumping. -->
   <div class="gauge-slot" id="gaugeSlot">
   <div class="gauge-card" id="gaugeCard">
-    <button class="ignition-btn" id="ignitionBtn" type="button" aria-label="Start engine" aria-pressed="false" title="Start engine">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg>
-    </button>
     <div class="gauge-content">
       <div class="gauge-wrap" id="overallGauge">
         <div class="dash-cluster">
+          <!-- Lives on the cluster, not on the card. Anchored to the card it
+               sat in the card's own top-right corner, which at the 992px shell
+               stranded it ~139px away from the dashboard it starts. On the
+               bezel it reads as the dash's own start button, and it now rides
+               the crank-shake animation with the rest of the cluster instead
+               of staying still while the dash shudders around it. -->
+          <button class="ignition-btn" id="ignitionBtn" type="button" aria-label="Start engine" aria-pressed="false" title="Start engine">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg>
+          </button>
           <div class="dial dial-rpm">
             <div class="dial-pod">
             <svg viewBox="0 0 100 100">
@@ -3044,11 +3141,31 @@ function load(){
     save();
   }else{
     let anyMigrated = false;
-    const clean = stored.filter(isValidStoredCar).map(car=>{
+    let anyIdRepaired = false;
+    const valid = stored.filter(isValidStoredCar);
+    // Ids have to be unique, not merely present. Every lookup downstream is a
+    // find/findIndex/filter on `id`, so two rows sharing one makes edit target
+    // the wrong car -- and makes a single delete remove BOTH of them, since
+    // that path filters by id rather than removing one entry. Reachable in
+    // practice: an older build minted ids from Date.now(), which collides
+    // outright for two cars added inside the same millisecond, and those
+    // values are still sitting in long-lived localStorage.
+    // The counter is seeded past every id already in the file BEFORE any
+    // repair mints a replacement -- otherwise a fresh id could land on one
+    // belonging to a car further down the list that hasn't been read yet.
+    reseedCarIds(valid);
+    const usedIds = new Set();
+    const clean = valid.map(car=>{
       const migratedName = migrateOldYearFormat(car.name);
       if(migratedName !== car.name) anyMigrated = true;
+      let id = car.id;
+      if(typeof id !== "number" || !Number.isFinite(id) || usedIds.has(id)){
+        id = mintCarId();
+        anyIdRepaired = true;
+      }
+      usedIds.add(id);
       return {
-        id: typeof car.id === "number" ? car.id : mintCarId(),
+        id,
         name: migratedName,
         cls: car.cls,
         race: car.race,
@@ -3061,7 +3178,7 @@ function load(){
     }
     cars = clean;
     reseedCarIds(cars);
-    if(clean.length !== stored.length || anyMigrated) save();
+    if(clean.length !== stored.length || anyMigrated || anyIdRepaired) save();
   }
   renderAll();
 }
@@ -3957,7 +4074,7 @@ function startCarEdit(id){
   syncCustomSelect(classSelect);
   syncCustomSelect(raceSelect);
   document.querySelector(".addrow").classList.add("editing");
-  document.getElementById("addBtn").textContent = "Save changes";
+  document.getElementById("addBtn").textContent = "Save";
   document.getElementById("cancelEditBtn").hidden = false;
   hideCarSuggestions();
   syncNameClearButton();
