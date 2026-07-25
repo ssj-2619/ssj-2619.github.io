@@ -12,17 +12,41 @@
     --ink:#0A0A0E; --panel:#15161C; --panel2:#1C1E26; --line:#262834;
     --cyan:#2DE2D6; --magenta:#FF2D87; --amber:#FFB627; --mint:#3DFFB0;
     --hi:#F4F5F7; --lo:#85878F; --dim:#4D4F58;
+    /* One column track shared by the garage list AND the add form above it,
+       so the class/race controls in the form sit directly over the class/race
+       badges in the list -- they used to be a flex row and a grid that never
+       lined up. The class column (48px) is sized for the dropdown and the
+       24px square badge centres in it; the race column (116px) is sized for
+       the widest race dropdown ("Cross-Country") and the badge fills it.
+       Only these two middle tracks are fixed, so they stay pinned while the
+       name and note columns flex with the viewport. The add form's last track
+       is `auto` (not 82px) so "Save changes"+"Cancel" can grow while editing
+       without disturbing the aligned class/race columns. */
+    --garage-cols: minmax(0,1.6fr) 48px 116px minmax(0,1fr) 82px;
+    --garage-cols-form: minmax(0,1.6fr) 48px 116px minmax(0,1fr) auto;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
+    background-color:var(--ink);
+    color:var(--hi); font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.5; padding:36px 16px 64px;
+  }
+  /* The diagonal weave + top glow used to live on <body> with
+     background-attachment:fixed. That combination is one of the more
+     expensive things you can ask a browser to do on scroll: a fixed
+     background can't be scrolled as a composited layer, so every scroll
+     frame repaints the full viewport's worth of two repeating gradients
+     plus a radial. Promoting the same artwork to its own fixed, painted-once
+     layer behind the content gets an identical result that the compositor
+     can then just leave alone -- and it makes the mobile
+     background-attachment:scroll workaround unnecessary. */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
     background-color:var(--ink);
     background-image:
       repeating-linear-gradient(45deg, rgba(255,255,255,.028) 0px, rgba(255,255,255,.028) 1px, transparent 1px, transparent 7px),
       repeating-linear-gradient(-45deg, rgba(255,255,255,.02) 0px, rgba(255,255,255,.02) 1px, transparent 1px, transparent 7px),
       radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.035), transparent 60%);
-    background-attachment:fixed;
-    color:var(--hi); font-family:'Inter',system-ui,sans-serif;
-    -webkit-font-smoothing:antialiased; line-height:1.5; padding:36px 16px 64px;
   }
   .shell{max-width:920px; margin:0 auto;}
   h1,h2,h3{font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:.01em;}
@@ -76,10 +100,44 @@
   .brand .sub{letter-spacing:.06em; padding-left:42px;}
 
   /* ---------- gauge ---------- */
+  /* Collapsing wrapper -- grid-template-rows 1fr -> 0fr, the same technique
+     the Spins brand groups use, which animates to the content height without
+     hardcoding a pixel value. One transition on the base rule covers both
+     directions (the .is-collapsed rule changes only values).
+     Directional COORDINATION comes from switchTabWithSlide: it collapses the
+     gauge at t=0 (as its own tab slides OUT) and defers the expand to the swap
+     (as its tab slides back IN), so the gauge moves together with its content
+     in both directions -- the fix for the return trip feeling different from
+     the way out. */
+  .gauge-slot{
+    display:grid; grid-template-rows:1fr; opacity:1; margin-bottom:24px;
+    transition:grid-template-rows .2s cubic-bezier(.4,0,.2,1),
+               opacity .2s cubic-bezier(.4,0,.2,1),
+               margin-bottom .2s cubic-bezier(.4,0,.2,1);
+  }
+  .gauge-slot.is-collapsed{
+    grid-template-rows:0fr; opacity:0; margin-bottom:0; pointer-events:none;
+  }
+  /* grid-template-rows:0fr zeroes the ROW, but the card's own padding/border
+     stay laid out inside it (border-box can't shrink padding below its value),
+     leaving a ~64px ghost -- collapse those on the same curve for a true zero. */
+  .gauge-slot > .gauge-card{
+    min-height:0; overflow:hidden;
+    transition:padding-top .2s cubic-bezier(.4,0,.2,1),
+               padding-bottom .2s cubic-bezier(.4,0,.2,1),
+               border-top-width .2s cubic-bezier(.4,0,.2,1),
+               border-bottom-width .2s cubic-bezier(.4,0,.2,1);
+  }
+  .gauge-slot.is-collapsed > .gauge-card{
+    padding-top:0; padding-bottom:0; border-top-width:0; border-bottom-width:0;
+  }
+  @media (prefers-reduced-motion:reduce){
+    .gauge-slot{transition:none;}
+  }
   .gauge-card{
     background:var(--panel); border:0.5px solid var(--line); border-radius:16px;
-    padding:50px 24px 18px; display:flex; flex-direction:column; align-items:center;
-    margin-bottom:28px; position:relative;
+    padding:44px 24px 18px; display:flex; flex-direction:column; align-items:center;
+    position:relative;
   }
   @keyframes gaugeSlideOutLeft{
     from{opacity:1; transform:translateX(0) scale(1); filter:blur(0);}
@@ -255,29 +313,45 @@
   }
 
   @media (max-width:760px){
-    body{background-attachment:scroll;}
     .dial{display:none;}
     .dash-cluster{gap:0; padding:16px 20px 14px;}
     .tell-row{margin-top:10px;}
+  }
+  #gaugePointer{
+    transform:translate(100px,100px) rotate(0deg) translate(-100px,-100px);
+    transition:transform 1s cubic-bezier(.2,.8,.2,1);
+    filter:drop-shadow(0 0 3px rgba(45,226,214,.55));
+  }
+  @media (prefers-reduced-motion:reduce){
+    #gaugePointer{transition:none;}
   }
   .gauge-num{
     position:absolute; left:50%; top:66%; transform:translate(-50%,-50%); text-align:center;
   }
   .gauge-num .pct{font-family:'Rajdhani',sans-serif; font-weight:700; font-size:30px; color:var(--hi); line-height:1;}
   .gauge-num .cap{font-size:10.5px; color:var(--lo); letter-spacing:.08em; text-transform:uppercase; margin-top:2px;}
-  .gauge-foot{
-    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.03em;
-    color:var(--lo); margin-top:4px; min-height:18px; text-align:center;
-  }
-  .gauge-foot b{color:var(--hi); font-weight:500;}
-
   /* ---------- tabs ---------- */
+  /* The underline now belongs to the bar, not the scrolling strip, so it runs
+     continuously under both the tabs and the backup icons beside them. */
+  .tabbar{
+    display:flex; align-items:stretch; gap:12px; margin-bottom:16px;
+    border-bottom:0.5px solid var(--line);
+  }
   .tabs{
-    display:flex; gap:8px; margin-bottom:18px; border-bottom:0.5px solid var(--line);
+    flex:1 1 auto; min-width:0;
+    display:flex; gap:8px;
     overflow-x:auto; scrollbar-width:none; position:relative; align-items:center;
   }
   .tab-controls{display:contents;}
   .tabs::-webkit-scrollbar{display:none;}
+  /* The strip hides its scrollbar, so when it overflows there is otherwise
+     nothing at all to say more tabs exist off to the right. Applied only
+     while there is genuinely something further to scroll to (see
+     syncTabScrollHint) so it never fades a tab that is already fully in view. */
+  .tabs.has-overflow{
+    -webkit-mask-image:linear-gradient(90deg, #000 calc(100% - 26px), transparent 100%);
+    mask-image:linear-gradient(90deg, #000 calc(100% - 26px), transparent 100%);
+  }
   .tab{
     font-family:'Rajdhani',sans-serif; font-weight:600; font-size:15px; color:var(--lo);
     background:none; border:none; padding:10px 4px 12px; cursor:pointer; position:relative;
@@ -307,7 +381,7 @@
   .tab-panel.panel-slide-in-left{animation:gaugeSlideInLeft .36s cubic-bezier(.2,.8,.2,1) both;}
 
   /* ---------- filter bar ---------- */
-  .filterbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px;}
+  .filterbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px;}
   #filterChips{display:inline-flex; gap:8px; align-items:center; flex-wrap:wrap;}
   .custom-select[data-select-id="fSort"]{flex:0 0 170px; width:170px; min-width:170px;}
   .custom-select[data-select-id="fSort"] .custom-select-trigger{width:170px;}
@@ -395,12 +469,24 @@
   .chip button:hover{background:var(--magenta);}
 
   /* ---------- add form ---------- */
+  /* Grid, not flex -- shares the list's column track (see --garage-cols) so
+     the form's fields line up over the list's columns. The 13px horizontal
+     padding is trimmed off the outer edges via negative side margins on the
+     first/last cells below, so col 1 and col 5 reach the same left/right as
+     the list rows (which sit flush to the panel with only their own 13px). */
   .addrow{
-    display:flex; gap:8px; flex-wrap:wrap; background:var(--panel); border:0.5px solid var(--line);
-    border-radius:12px; padding:12px; margin-bottom:18px; position:relative; z-index:5;
+    display:grid; grid-template-columns:var(--garage-cols-form); gap:12px; align-items:center;
+    background:var(--panel); border:0.5px solid var(--line);
+    border-radius:12px; margin-bottom:16px; position:relative; z-index:5;
     box-shadow:inset 0 1px 0 rgba(45,226,214,.12);
+    /* Horizontal padding matches the list rows' 13px-left / 5px-right exactly
+       (rows are padding:12px 5px 12px 13px) so the two content boxes are the
+       same width and start at the same x -- otherwise the flexible name/note
+       columns absorb the few-px padding difference and the class/race tracks
+       drift out from under the badges by ~4px. */
+    padding:12px 5px 12px 13px;
   }
-  .name-field{position:relative; flex:3 1 320px; min-width:220px;}
+  .name-field{position:relative; min-width:0;}
   .name-field input{width:100%;}
   .suggestions{
     position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:80;
@@ -418,9 +504,13 @@
   .suggestion:last-child{border-bottom:none;}
   .suggestion:hover, .suggestion.active{background:var(--panel2);}
   .suggestion-name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  /* Was left on a hardcoded dark ink when the other chips moved -- which put
+     S2 at 3.29:1 in the autocomplete list. Same treatment as everywhere else. */
   .suggestion-class{
-    flex:none; min-width:30px; border-radius:6px; padding:2px 6px; text-align:center;
-    font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; color:#04140C;
+    flex:none; width:24px; height:24px; border-radius:4px;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; color:#fff;
+    text-shadow:0 0 2px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.65), 0 1px 1px rgba(0,0,0,.5);
   }
   .clear-name{
     position:absolute; top:50%; right:7px; transform:translateY(-50%);
@@ -431,12 +521,17 @@
   .clear-name svg{width:14px; height:14px; display:block;}
   .clear-name:hover{background:rgba(255,45,135,.12); border-color:rgba(255,45,135,.35); color:var(--magenta);}
   .clear-name[hidden]{display:none;}
-  .addrow input, .addrow select{flex:1; min-width:120px;}
-  .addrow .custom-select{flex:1; min-width:120px;}
-  .custom-select[data-select-id="newClass"]{flex:0 0 58px; min-width:58px;}
-  .custom-select[data-select-id="newRace"]{flex:0 0 148px; min-width:148px;}
-  #newClass{flex:0 0 58px; min-width:58px;}
-  #newRace{flex:0 0 148px; min-width:148px;}
+  /* Grid items stretch to fill their track by default, so no flex/basis is
+     needed -- just let them shrink (min-width:0) rather than forcing a
+     120px floor that would blow out the fixed class/race columns. */
+  .addrow input, .addrow .custom-select{min-width:0;}
+  /* The class/race dropdowns have to fit inside tracks (48/116px) narrower
+     than their default 58/148 -- trim the trigger's inner padding and the
+     value-to-caret gap so "S2" and "Cross-Country" still fit. */
+  .custom-select[data-select-id="newClass"] .custom-select-trigger,
+  .custom-select[data-select-id="newRace"] .custom-select-trigger{
+    padding-left:9px; padding-right:8px; gap:3px;
+  }
   /* Race type labels vary in length (e.g. "Cross-Country" is noticeably
      wider than "Touge"), and the exact width depends on whichever font
      actually loads -- clip with an ellipsis rather than letting the label
@@ -444,14 +539,15 @@
   .custom-select[data-select-id="newRace"] .custom-select-value{
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
   }
-  #newNote{flex:1.6 1 180px;}
   /* Grouping Add/Save and Cancel into one flex item keeps them from wrapping
      apart from each other -- previously, whichever button ran out of room
      first (usually Cancel, since it's last) would drop to its own line on
      its own while its sibling stayed put, which read as broken rather than
      as an intentional wrap. Wrapping now moves the whole action pair down
      together, which still looks deliberate at any width. */
-  .addrow-actions{display:flex; gap:8px; flex:none; margin-left:auto;}
+  /* Last grid cell (col 5), right-aligned within it. margin-left:auto is gone
+     -- the grid track places it, not flex. */
+  .addrow-actions{display:flex; gap:8px; justify-self:end;}
   .addrow input{
     height:36px; box-sizing:border-box;
     background:var(--panel2); color:var(--hi); border:0.5px solid var(--line); border-radius:8px;
@@ -477,7 +573,7 @@
   .cancel-edit[hidden]{display:none;}
 
   /* ---------- share setup: compact icon buttons, next to the filters ---------- */
-  .share-icons-wrap{margin-left:auto; flex:none; align-self:center;}
+  .share-icons-wrap{flex:none; align-self:center;}
   .share-icons{display:flex; align-items:center; gap:6px;}
   .icon-btn{
     width:34px; height:34px; flex:none; display:flex; align-items:center; justify-content:center;
@@ -504,19 +600,65 @@
   .share-status[data-state="success"]{color:#8BB7AF; border-color:rgba(139,183,175,.35);}
   .share-status[data-state="error"]{color:#C56A8E; border-color:rgba(197,106,142,.35);}
 
+  /* ---------- undo toast ---------- */
+  .undo-toast{
+    position:fixed; left:50%; bottom:24px; z-index:200;
+    transform:translate(-50%, 12px);
+    display:flex; align-items:center; gap:14px;
+    max-width:min(440px, calc(100vw - 32px));
+    padding:11px 11px 11px 16px;
+    background:#1C1E26; border:0.5px solid var(--line); border-radius:11px;
+    box-shadow:0 14px 34px rgba(0,0,0,.5);
+    opacity:0; pointer-events:none;
+    transition:opacity .22s ease, transform .22s cubic-bezier(.2,.8,.2,1);
+  }
+  .undo-toast.show{opacity:1; transform:translate(-50%, 0); pointer-events:auto;}
+  .undo-toast[hidden]{display:none;}
+  .undo-toast-msg{
+    min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    font-size:13px; color:var(--hi);
+  }
+  .undo-toast-msg b{font-weight:600;}
+  .undo-toast-btn{
+    flex:none; background:rgba(45,226,214,.14); border:0.5px solid rgba(45,226,214,.4);
+    color:var(--cyan); border-radius:7px; padding:6px 14px; cursor:pointer;
+    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:.02em;
+    transition:background .14s ease;
+  }
+  .undo-toast-btn:hover{background:rgba(45,226,214,.24);}
+  .undo-toast-btn:focus-visible{outline:1.5px solid var(--cyan); outline-offset:2px;}
+  @media (prefers-reduced-motion:reduce){
+    .undo-toast{transition:opacity .22s ease;}
+  }
+
   /* ---------- garage list ---------- */
+  /* Class column is exactly the square's width; race column is sized to the
+     longest race label ("Street Racing"/"Cross-Country", 85.8px at 11px
+     JetBrains Mono, plus 9px padding a side). Both columns stay FIXED rather
+     than auto/max-content because every .row is its own grid container -- an
+     auto column would be measured per row, so the note and action columns
+     would start at a different x on every line. */
   .row{
-    display:grid; grid-template-columns:1.6fr 52px 132px 1fr 78px; align-items:center; gap:12px;
-    padding:11px 5px 11px 13px; border:0.5px solid transparent; border-bottom-color:var(--line);
+    display:grid; grid-template-columns:var(--garage-cols); align-items:center; gap:12px;
+    /* No separator rule between rows. Each row already opens with a coloured
+       accent bar and carries two hard-edged chips, so a horizontal line was a
+       fourth structural element competing with three that were already doing
+       the job -- it made the list read as a table rather than a garage.
+       The border shorthand stays (transparent) because the editing and
+       set-aside states light it up. */
+    padding:12px 5px 12px 13px; border:0.5px solid transparent;
     border-radius:7px; position:relative; transition:background .15s ease, border-color .15s ease;
   }
+  /* Always on, not hover-only. This bar is the row's quietest way of carrying
+     the race colour, and leaving it hidden until hover meant the loud channel
+     (a fully saturated race pill) was the only one ever visible. Now the bar
+     carries race identity continuously and the pill can afford to be calm. */
   .row::before{
     content:""; position:absolute; left:0; top:6px; bottom:6px; width:2.5px; border-radius:2px;
-    background:var(--row-accent, transparent); opacity:0; transition:opacity .15s ease;
+    background:var(--row-accent, transparent); opacity:.6; transition:opacity .15s ease;
   }
   .row:hover{background:rgba(255,255,255,.02);}
-  .row:hover::before{opacity:.85;}
-  .row:last-child{border-bottom:none;}
+  .row:hover::before{opacity:1;}
   .row.editing{background:rgba(45,226,214,.055); border-color:rgba(45,226,214,.38);}
   .row .name{
     font-size:14px; color:var(--hi); font-weight:500; min-width:0;
@@ -540,18 +682,97 @@
     background:linear-gradient(115deg, #0E8F9E 0%, #12B4C4 40%, #2DE2D6 100%);
     box-shadow:0 0 0 0.5px rgba(93,230,224,.4), 0 1px 4px rgba(18,180,196,.35);
   }
-  .row .note{font-size:12.5px; color:var(--lo); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  /* Dimmer than --lo. The left of the row is now tight and structured (a
+     square, then a fixed-width chip), which left the note reading as loose
+     text at the same weight as everything else. Sitting it a step further
+     back sets the order the row should be read in: name, then class/race,
+     then whatever the owner scribbled about it. */
+  .row .note{font-size:12.5px; color:#6E717A; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  /* Flat, white-on-colour, matching FH6's own class badges. This previously
+     carried a top highlight gradient, an inset bottom shade and a drop
+     shadow -- three separate cues that all say "raised button", which is not
+     what these are. They're labels, and the game draws them flat.
+     ---
+     The ink is white on every colour, as in the game, rather than picked per
+     colour for maximum contrast. That uniformity is the point, but it can't
+     stand alone here: the game renders these large, while at 11px plain
+     white on C (#FFC533) measures 1.45:1 and simply washes out. The dark
+     halo below is what buys that back -- it separates the glyph from the
+     fill without a hard stroke, which at this size thickens the letterform
+     into mush (tested at 0.30em and 0.18em; both were worse than this). */
   .badge{
-    font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; padding:3px 0;
-    border-radius:6px; white-space:nowrap; text-align:center; width:100%;
-    background-image:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0) 45%);
-    box-shadow:inset 0 -1px 0 rgba(0,0,0,.18), 0 1px 2px rgba(0,0,0,.25);
+    font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600;
+    border-radius:4px; white-space:nowrap; text-align:center;
+    height:24px; display:inline-flex; align-items:center; justify-content:center;
+    justify-self:start; max-width:100%;
+    color:#fff;
+    text-shadow:0 0 2px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.65), 0 1px 1px rgba(0,0,0,.5);
   }
-  .row-actions{grid-column:5; display:flex; align-items:center; justify-content:flex-end; gap:2px;}
+  /* Square, like the game's own class mark. In FH6 the class sits in a square
+     and the PI value lives in a separate rectangle extending off its right
+     edge; we don't show PI at all (a car's stock PI stops meaning anything
+     the moment it's tuned), so what's left is just the square. */
+  /* 24, not 22: at 22 the two-character classes (S1/S2, 13.2px of text) sat
+     hard against the edges while the single letters had nearly twice the
+     breathing room. 26 overshoots -- the square then stands taller than the
+     race chip beside it and the pair stops reading as one unit. */
+  /* Centred in the 48px class track (which is sized for the dropdown above
+     it, not the square), so the square sits directly under that dropdown. */
+  .badge-class{width:24px; flex:none; justify-self:center;}
+  /* Outline variant -- fill, border and text colour are all set inline from
+     the race's own colour (see renderList). Everything the filled .badge adds
+     to sell a raised, solid chip is explicitly unset here. */
+  /* One width for every race, set by the longest label -- not hugging each
+     label individually. Ragged chip ends left a gutter to the note column
+     that changed on every row (36px after "Touge", 3px after
+     "Cross-Country"), which is what made the notes read as unmoored. The
+     column is sized so the LONGEST label still only gets ~10px of cheek,
+     rather than the 23px it had back when this stretched to a 132px column. */
+  .badge-race{
+    width:100%; padding:0 9px;
+    background-image:none; box-shadow:none;
+    border:0.5px solid transparent;
+    overflow:hidden; text-overflow:ellipsis;
+    /* Outline chip: the text sits on the dark panel, not on a colour fill,
+       so it needs neither the white ink nor the halo the filled badge uses. */
+    text-shadow:none;
+  }
+  /* One rhythm across all three. An earlier version added an extra 6px only
+     before delete, to separate the destructive action -- but 2px/2px/8px
+     reads as a mistake rather than as intent, and a few pixels were never
+     going to be the thing that prevents an accidental delete anyway. That
+     belongs to a confirm or an undo, not to spacing. */
+  .row-actions{grid-column:5; display:flex; align-items:center; justify-content:flex-end; gap:4px;}
   .editbtn, .delbtn, .flagbtn{
     background:none; border:none; color:#8A8C96; cursor:pointer; padding:4px;
     line-height:1; display:flex; align-items:center; justify-content:center;
-    border-radius:6px; transition:background .12s ease, color .12s ease;
+    border-radius:6px; transition:background .12s ease, color .12s ease, opacity .14s ease;
+  }
+  /* Three icons repeated down every row were, after the badges went flat and
+     the separators went away, the loudest recurring thing in the list -- and
+     edit/delete are one-shot actions nobody needs to see until they reach for
+     them. They stay in the layout (opacity, not display) so nothing shifts,
+     and stay focusable, so Tab still reaches them -- :focus-within is what
+     brings them back for keyboard users.
+     Two independent guards, because a control nobody can reach is a far worse
+     failure than a slightly busy row:
+       - (hover:hover) and (pointer:fine) -- a touch screen has no hover state
+         to reveal them with, so there they simply stay visible.
+       - min-width:561px -- belt and braces for devices that misreport their
+         pointer capabilities. Below that the row has already reflowed to the
+         stacked mobile layout, which is overwhelmingly touch anyway. */
+  @media (hover: hover) and (pointer: fine) and (min-width: 561px){
+    /* All three hide, including an active flag. Keeping the lit flag pinned
+       on was tried first, on the reasoning that it is a state rather than an
+       action -- but on screen it just floated alone at the far right of an
+       otherwise empty row, 60px from anything else, reading as a stray
+       element. And it was carrying no information: a set-aside row already
+       announces itself with a red tint, a red border and a red accent bar,
+       all of which are far easier to spot while scanning than a 16px icon in
+       the gutter. The toggle comes back on hover like the other two. */
+    .row .flagbtn, .row .editbtn, .row .delbtn{opacity:0;}
+    .row:hover .flagbtn, .row:hover .editbtn, .row:hover .delbtn,
+    .row:focus-within .flagbtn, .row:focus-within .editbtn, .row:focus-within .delbtn{opacity:1;}
   }
   .editbtn svg, .delbtn svg, .flagbtn svg{width:16px; height:16px; display:block;}
   .editbtn:hover{color:var(--cyan); background:rgba(45,226,214,.1);}
@@ -572,10 +793,16 @@
      see countCovered() and renderGrid(). */
   .row.disliked{background:rgba(255,90,60,.055); border-color:rgba(255,90,60,.22);}
   .row.disliked:hover{background:rgba(255,90,60,.09);}
-  .row.disliked::before{background:#FF5A3C; opacity:.7;}
-  .row.disliked:hover::before{opacity:.9;}
+  /* Full strength, not .7. Now that the lit flag no longer stays pinned in
+     the gutter, this bar is the primary thing the eye catches when scanning
+     for set-aside cars, so it shouldn't be dimmer than a plain row's own
+     accent on hover. */
+  .row.disliked::before{background:#FF5A3C; opacity:1;}
   .empty{
     text-align:center; padding:40px 20px; color:var(--lo); font-size:14px;
+  }
+  .empty-mark{
+    width:34px; height:34px; display:block; margin:0 auto 12px; color:var(--dim);
   }
   .empty b{display:block; color:var(--hi); font-family:'Rajdhani',sans-serif; font-size:18px; font-weight:700; margin-bottom:6px;}
 
@@ -592,22 +819,37 @@
      at widths where the table never actually scrolls: a non-scrolled
      sticky cell sits exactly where it would anyway. */
   table.cov th.corner, table.cov td.racehead{width:150px; position:sticky; left:0; z-index:1;}
-  table.cov th{
-    font-family:'JetBrains Mono',monospace; font-weight:600; color:#04201E; font-size:11.5px;
+  /* Same white-on-colour treatment as the garage badges, so a class or race
+     chip reads identically wherever it appears. The halo matters more here
+     than anywhere else: these headers sit on the full-strength palette,
+     which includes Touge's very light cyan. */
+  table.cov th, table.cov td.racehead{
+    color:#fff;
+    text-shadow:0 0 2px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.65), 0 1px 1px rgba(0,0,0,.5);
   }
-  table.cov th.corner{background:var(--ink); color:var(--lo); font-size:10px; text-align:left; padding-left:6px;}
+  table.cov th{
+    font-family:'JetBrains Mono',monospace; font-weight:600; font-size:11.5px;
+  }
+  table.cov th.corner{
+    background:var(--ink); color:var(--lo); font-size:10px; text-align:left; padding-left:6px;
+    text-shadow:none;
+  }
   table.cov td.racehead{
-    font-family:'Rajdhani',sans-serif; font-weight:600; color:#04201E; text-align:left; padding-left:10px;
+    font-family:'Rajdhani',sans-serif; font-weight:600; text-align:left; padding-left:10px;
     font-size:12.5px; white-space:nowrap;
   }
   table.cov td.cell{
     font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; cursor:pointer;
-    color:#8A8C96; background:var(--panel2);
+    color:#6E727E; background:#1A1C24;
   }
   table.cov td.cell:hover{outline:1.5px solid var(--cyan); outline-offset:-1.5px;}
   table.cov td.cell.target{box-shadow:inset 0 0 0 1px rgba(255,182,39,.9);}
-  table.cov td.cell.has1{background:#103B30; color:#7FE8C8;}
-  table.cov td.cell.has2{background:#0E5C45; color:#B9FFE0;}
+  /* Pushed well clear of the empty state. The axis headers are fully
+     saturated blocks, so a near-monochrome data field left the loudest thing
+     on the grid being its own labels -- the filled cells now carry enough
+     step between 0 / 1 / 2+ to be read as the data they are. */
+  table.cov td.cell.has1{background:#16553F; color:#8FF3CE;}
+  table.cov td.cell.has2{background:#0C7252; color:#EAFFF6;}
   /* align-items:flex-start is intentional -- "Horizon Play" sits level with
      the first legend-keys row ("no car yet"), not centered against the
      whole 3-row block. This was flipped to center during a routine
@@ -620,8 +862,9 @@
   }
   .legend-keys{display:flex; flex-direction:column; gap:6px;}
   .legend span{display:inline-flex; align-items:center; gap:5px;}
-  .legend .horizon-note{color:#9B7D32;}
-  .sw{width:10px; height:10px; border-radius:3px; display:inline-block;}
+  .legend .horizon-note{color:#C6A24A;}
+  .sw{width:10px; height:10px; border-radius:3px; display:inline-block; flex:none;}
+  .sw-target{background:transparent; box-shadow:inset 0 0 0 1.5px rgba(255,182,39,.9);}
 
   /* ---------- dirt route surfaces ---------- */
   .surface-summary{
@@ -682,10 +925,10 @@
     display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap;
   }
   .spin-intro-copy{min-width:0;}
-  .spin-intro h2{font-size:21px; line-height:1.1;}
   .spin-count{
-    display:inline-block; margin-top:8px; color:var(--amber);
-    font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600;
+    display:inline-block; color:var(--amber);
+    font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600;
+    letter-spacing:.02em;
   }
   .spin-tools{
     width:min(100%,340px); flex:none; display:flex; flex-direction:column; gap:8px;
@@ -930,10 +1173,15 @@
   .wheelspin-import-btn:focus-visible{outline:1.5px solid var(--cyan); outline-offset:2px;}
 
   .foot{
-    display:flex; justify-content:space-between; align-items:center; margin-top:28px;
-    font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.02em; color:var(--dim);
+    display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:24px;
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.02em; color:#5D6069;
   }
-  .foot button{background:none; border:none; color:var(--dim); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:10.5px;}
+  /* Left free to wrap; the action beside it is not. On a narrow screen
+     "Clear all data" was breaking across two lines mid-phrase. */
+  .foot button{
+    background:none; border:none; color:#5D6069; text-decoration:underline; cursor:pointer;
+    font-family:inherit; font-size:10.5px; flex:none; white-space:nowrap;
+  }
   .foot button:hover{color:var(--magenta);}
   .build-tag{
     margin-left:6px; font-family:'JetBrains Mono',monospace; font-size:9.5px;
@@ -958,6 +1206,13 @@
     .gauge-content{max-width:100%; height:250px;}
     .gauge-wrap{max-width:210px;}
     .gauge-num .pct{font-size:28px;}
+    /* At this width "Track completion" wrapped to two lines and the second
+       one dropped clean out the bottom of the arc. Tightening the type and
+       lifting the block keeps it on one line, inside the gauge, without
+       having to shorten the label into something less descriptive. */
+    .gauge-num{top:62%;}
+    .gauge-num .cap{font-size:9px; letter-spacing:.04em; white-space:nowrap;}
+    .gauge-card{padding:34px 16px 16px;}
     .surface-summary-top{align-items:flex-start; flex-direction:column; gap:12px;}
     .surface-numbers{width:100%; justify-content:space-between;}
     .dirt-route-list{grid-template-columns:1fr;}
@@ -988,8 +1243,28 @@
     .row{display:flex; flex-wrap:wrap; align-items:center; gap:8px;}
     .row .name{flex:1 1 100%;}
     .row .note{display:none;}
-    .row .badge{width:auto; padding:3px 10px;}
+    /* The class mark stays square here too -- it's the same badge, and the
+       row only reflows into a wrapping flex layout at this width. Only the
+       race chip needs its grid-era sizing undone. */
+    .row .badge-race{width:auto; max-width:none;}
     .row-actions{margin-left:auto;}
+
+    /* The 5-column alignment grid only makes sense while the list beside it is
+       also a table. On a phone there is no room for name + two dropdowns + note
+       + button on one line (the name field crushed to ~18px), so the form
+       stacks: name on its own row, class + race sharing the next, note, then
+       the button. Padding goes back to symmetric 12px since there is no list
+       content-box to line up with any more. */
+    .addrow{
+      grid-template-columns:max-content 1fr;
+      padding:12px;
+    }
+    .addrow .name-field{grid-column:1 / -1;}
+    .addrow .custom-select[data-select-id="newClass"]{grid-column:1;}
+    .addrow .custom-select[data-select-id="newRace"]{grid-column:2;}
+    .addrow #newNote{grid-column:1 / -1;}
+    .addrow-actions{grid-column:1 / -1; justify-self:stretch;}
+    .addrow-actions .addbtn{flex:1;}
   }
 </style>
 </head>
@@ -999,8 +1274,8 @@
   <div class="head">
     <div class="brand">
       <div class="wordmark-row">
-        <button type="button" class="logo-toggle" id="logoToggle" aria-label="Switch logo style">
-          <svg id="logoModern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" hidden><defs><path id="sakuraPetal" d="M12,12 C10.2,10.8 9.6,8.3 10.7,6.3 Q11.4,5.1 12,5.9 Q12.6,5.1 13.3,6.3 C14.4,8.3 13.8,10.8 12,12 Z"/></defs><use href="#sakuraPetal"/><use href="#sakuraPetal" transform="rotate(72 12 12)"/><use href="#sakuraPetal" transform="rotate(144 12 12)"/><use href="#sakuraPetal" transform="rotate(216 12 12)"/><use href="#sakuraPetal" transform="rotate(288 12 12)"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>
+        <button type="button" class="logo-toggle" id="logoToggle" aria-label="motorpool">
+          <svg id="logoModern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" hidden><defs><path id="sakuraPetal" d="M12,12 C10.1,10.7 9.5,8.2 10.7,6.2 Q11.1,5.0 11.55,5.3 Q12,7.2 12.45,5.3 Q12.9,5.0 13.3,6.2 C14.5,8.2 13.9,10.7 12,12 Z"/></defs><use href="#sakuraPetal"/><use href="#sakuraPetal" transform="rotate(72 12 12)"/><use href="#sakuraPetal" transform="rotate(144 12 12)"/><use href="#sakuraPetal" transform="rotate(216 12 12)"/><use href="#sakuraPetal" transform="rotate(288 12 12)"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>
           <svg id="logoHotaru" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.9" hidden><circle cx="7" cy="16.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="7" cy="16.5" r="3.2" opacity="0.35"/><circle cx="16" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="2.8" opacity="0.35"/><circle cx="17.5" cy="17.5" r="1" fill="currentColor" stroke="none"/><circle cx="9.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" opacity="0.75"/></svg>
           <canvas id="logoMomiji" hidden></canvas>
           <svg id="logoSnowflake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" hidden><defs><g id="snowArmHeader"><line x1="12" y1="12" x2="12" y2="4.5"/><line x1="12" y1="7" x2="10" y2="5.5"/><line x1="12" y1="7" x2="14" y2="5.5"/></g></defs><use href="#snowArmHeader"/><use href="#snowArmHeader" transform="rotate(60 12 12)"/><use href="#snowArmHeader" transform="rotate(120 12 12)"/><use href="#snowArmHeader" transform="rotate(180 12 12)"/><use href="#snowArmHeader" transform="rotate(240 12 12)"/><use href="#snowArmHeader" transform="rotate(300 12 12)"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
@@ -1010,12 +1285,18 @@
         <!-- Versioning: major.minor bumps for scope (new tab/capability = +0.1,
              smaller info-panel-scale feature = +0.01), small tweaks/fixes append
              or increment a _N suffix on the current version (e.g. this build). -->
-        <span class="build-tag">v1.14</span>
+        <span class="build-tag">v1.16_4</span>
       </div>
       <div class="sub">A CAR TRACKER FOR FORZA HORIZON 6</div>
     </div>
   </div>
 
+  <!-- The gauge measures garage race/class coverage, so it belongs to Garage
+       and Coverage and to nothing else. On Spins & Unlocks and Dirt Routes it
+       was still eating the entire top of the fold while reporting on data
+       those tabs don't show. Collapsed rather than display:none'd so the
+       change reads as the panel making room, not as the page jumping. -->
+  <div class="gauge-slot" id="gaugeSlot">
   <div class="gauge-card" id="gaugeCard">
     <button class="ignition-btn" id="ignitionBtn" type="button" aria-label="Start engine" aria-pressed="false" title="Start engine">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></svg>
@@ -1062,6 +1343,17 @@
               <path d="M 20 100 A 80 80 0 0 1 180 100" stroke="#1C1E26" stroke-width="14" fill="none" stroke-linecap="round"/>
               <path id="gaugeFill" d="M 20 100 A 80 80 0 0 1 180 100" stroke="#2DE2D6" stroke-width="14" fill="none" stroke-linecap="round"
                     stroke-dasharray="251.3" stroke-dashoffset="251.3" style="transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1);"/>
+              <!-- Analog pointer riding the outside of the track. The two
+                   flanking dials are fully analog but carry no data at all,
+                   while this gauge -- the only one showing something real --
+                   had no indicator of its own beyond the arc's length. It
+                   rides outside the band rather than pivoting from the hub
+                   so it never sweeps across the percentage readout at
+                   mid-range. Rotation is composed by hand exactly like
+                   .dial-needle above, for the same cross-browser reason. -->
+              <g id="gaugePointer">
+                <polygon points="11,100 1.5,95 1.5,105" fill="#2DE2D6"/>
+              </g>
               <g id="ticks" stroke="#4D4F58" stroke-width="1.5"><line x1="20.0000" y1="100.0000" x2="30.0000" y2="100.0000"/><line x1="23.9155" y1="75.2786" x2="33.4260" y2="78.3688"/><line x1="35.2786" y1="52.9772" x2="43.3688" y2="58.8550"/><line x1="52.9772" y1="35.2786" x2="58.8550" y2="43.3688"/><line x1="75.2786" y1="23.9155" x2="78.3688" y2="33.4260"/><line x1="100.0000" y1="20.0000" x2="100.0000" y2="30.0000"/><line x1="124.7214" y1="23.9155" x2="121.6312" y2="33.4260"/><line x1="147.0228" y1="35.2786" x2="141.1450" y2="43.3688"/><line x1="164.7214" y1="52.9772" x2="156.6312" y2="58.8550"/><line x1="176.0845" y1="75.2786" x2="166.5740" y2="78.3688"/><line x1="180.0000" y1="100.0000" x2="170.0000" y2="100.0000"/></g>
             </svg>
             <div class="gauge-num">
@@ -1130,15 +1422,25 @@
       </div>
     </div>
   </div>
+  </div>
 
+  <!-- The export/import pair used to live INSIDE .tabs, which is a
+       horizontally scrolling strip. On a phone the tab labels alone overflow
+       it, so the two buttons sat past the right edge of the scroll area --
+       and .tabs hides its scrollbar, so there was no hint they existed at
+       all. Backup is the only thing standing between a user and losing the
+       whole garage, so it can't be the thing that scrolls away: the strip
+       still scrolls, but the icons are now a fixed sibling outside it. -->
+  <div class="tabbar">
   <div class="tabs">
     <div class="tab-controls" role="tablist" aria-label="Tracker sections">
-      <button class="tab active" id="tabGarage" data-tab="garage" role="tab" aria-controls="panelGarage" aria-selected="true">Garage</button>
-      <button class="tab" id="tabCoverage" data-tab="coverage" role="tab" aria-controls="panelCoverage" aria-selected="false">Coverage</button>
-      <button class="tab" id="tabSpins" data-tab="spins" role="tab" aria-controls="panelSpins" aria-selected="false">Spins &amp; Unlocks</button>
+      <button class="tab active" id="tabGarage" data-tab="garage" role="tab" aria-controls="panelGarage" aria-selected="true" tabindex="0">Garage</button>
+      <button class="tab" id="tabCoverage" data-tab="coverage" role="tab" aria-controls="panelCoverage" aria-selected="false" tabindex="-1">Coverage</button>
+      <button class="tab" id="tabSpins" data-tab="spins" role="tab" aria-controls="panelSpins" aria-selected="false" tabindex="-1">Spins &amp; Unlocks</button>
       <span class="tab-divider" aria-hidden="true"></span>
-      <button class="tab" id="tabDirt" data-tab="dirt" role="tab" aria-controls="panelDirt" aria-selected="false">Dirt Routes</button>
+      <button class="tab" id="tabDirt" data-tab="dirt" role="tab" aria-controls="panelDirt" aria-selected="false" tabindex="-1">Dirt Routes</button>
     </div>
+  </div>
     <div class="share-icons-wrap">
       <div class="share-icons">
         <button class="icon-btn" id="exportSetupFile" type="button" aria-label="Export garage to a backup file" title="Export backup (save)">
@@ -1154,7 +1456,7 @@
   <div class="share-status-row"><span class="share-status" id="shareStatus" role="status" aria-live="polite"></span></div>
 
   <div class="tab-stage">
-  <div class="tab-panel" id="panelGarage" role="tabpanel" aria-labelledby="tabGarage">
+  <div class="tab-panel" id="panelGarage" role="tabpanel" aria-labelledby="tabGarage" tabindex="0">
     <div class="filterbar">
       <select id="fRace" aria-label="Filter by race type"><option value="">All race types</option></select>
       <select id="fClass" aria-label="Filter by class"><option value="">All classes</option></select>
@@ -1196,21 +1498,24 @@
     </div>
   </div>
 
-  <div class="tab-panel" id="panelCoverage" role="tabpanel" aria-labelledby="tabCoverage" style="display:none;">
+  <div class="tab-panel" id="panelCoverage" role="tabpanel" aria-labelledby="tabCoverage" tabindex="0" style="display:none;">
     <div class="gridwrap">
       <table class="cov" id="covTable"></table>
     </div>
     <div class="legend">
       <div class="legend-keys">
-        <span><span class="sw" style="background:#2A2D38"></span>no car yet</span>
-        <span><span class="sw" style="background:#103B30"></span>1 car</span>
-        <span><span class="sw" style="background:#0E5C45"></span>2+ cars</span>
+        <span><span class="sw" style="background:#1A1C24"></span>no car yet</span>
+        <span><span class="sw" style="background:#16553F"></span>1 car</span>
+        <span><span class="sw" style="background:#0C7252"></span>2+ cars</span>
       </div>
-      <span class="horizon-note">Horizon Play</span>
+      <!-- The amber ring on certain cells had no legend entry at all -- the
+           label sat here as bare text while every other key carried a
+           swatch, so nothing on the page said what the outline meant. -->
+      <span class="horizon-note"><span class="sw sw-target"></span>Horizon Play target</span>
     </div>
   </div>
 
-  <div class="tab-panel" id="panelDirt" role="tabpanel" aria-labelledby="tabDirt" style="display:none;">
+  <div class="tab-panel" id="panelDirt" role="tabpanel" aria-labelledby="tabDirt" tabindex="0" style="display:none;">
     <section class="surface-summary" aria-labelledby="dirtRoutesTitle">
       <div class="surface-summary-top">
         <div>
@@ -1234,11 +1539,14 @@
     <div class="dirt-route-list" id="dirtRouteList"></div>
   </div>
 
-  <div class="tab-panel" id="panelSpins" role="tabpanel" aria-labelledby="tabSpins" style="display:none;">
-    <section class="spin-intro" aria-labelledby="spinTitle">
+  <div class="tab-panel" id="panelSpins" role="tabpanel" aria-labelledby="tabSpins" tabindex="0" style="display:none;">
+    <!-- The visible heading repeated the tab label verbatim directly beneath
+         it. The section keeps its accessible name via aria-label, and the
+         count -- the one thing here that actually carries information -- is
+         promoted into the space the duplicate title was using. -->
+    <section class="spin-intro" aria-label="Spins and Unlocks">
       <div class="spin-intro-top">
         <div class="spin-intro-copy">
-          <h2 id="spinTitle">Spins &amp; Unlocks</h2>
           <span class="spin-count" id="spinCount">0 cars</span>
         </div>
         <div class="spin-tools">
@@ -1300,6 +1608,16 @@
       <button class="wheelspin-import-btn" id="wheelspinImportNo" type="button">No, garage only</button>
     </div>
   </div>
+</div>
+
+<!-- Undo toast for car deletion. A single delete has no confirm step (only
+     "Clear all data" asks), and the delete button is a hover-revealed icon
+     next to edit -- an easy misfire. Rather than gate every delete behind a
+     dialog, the delete happens immediately and this offers a few seconds to
+     take it back, which is the lighter, less interrupting pattern. -->
+<div class="undo-toast" id="undoToast" role="status" aria-live="polite" hidden>
+  <span class="undo-toast-msg" id="undoToastMsg"></span>
+  <button type="button" class="undo-toast-btn" id="undoBtn">Undo</button>
 </div>
 
 <canvas id="sakuraCanvas" aria-hidden="true"></canvas>
@@ -1386,7 +1704,7 @@
   <button type="button" class="dev-season-handle" id="devSeasonHandle" aria-label="Preview a season" aria-expanded="false"></button>
   <div class="dev-season-buttons">
     <button type="button" data-dev-season="spring">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><defs><path id="sakuraPetalDev" d="M12,12 C10.2,10.8 9.6,8.3 10.7,6.3 Q11.4,5.1 12,5.9 Q12.6,5.1 13.3,6.3 C14.4,8.3 13.8,10.8 12,12 Z"/></defs><use href="#sakuraPetalDev"/><use href="#sakuraPetalDev" transform="rotate(72 12 12)"/><use href="#sakuraPetalDev" transform="rotate(144 12 12)"/><use href="#sakuraPetalDev" transform="rotate(216 12 12)"/><use href="#sakuraPetalDev" transform="rotate(288 12 12)"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><defs><path id="sakuraPetalDev" d="M12,12 C10.1,10.7 9.5,8.2 10.7,6.2 Q11.1,5.0 11.55,5.3 Q12,7.2 12.45,5.3 Q12.9,5.0 13.3,6.2 C14.5,8.2 13.9,10.7 12,12 Z"/></defs><use href="#sakuraPetalDev"/><use href="#sakuraPetalDev" transform="rotate(72 12 12)"/><use href="#sakuraPetalDev" transform="rotate(144 12 12)"/><use href="#sakuraPetalDev" transform="rotate(216 12 12)"/><use href="#sakuraPetalDev" transform="rotate(288 12 12)"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>
       <span>sakura</span>
     </button>
     <button type="button" data-dev-season="summer">
@@ -1416,6 +1734,66 @@ const TARGET_COVERAGE = {
 };
 const RACE_COLOR = {"Road Racing":"#0397FC","Dirt Racing":"#FF5B00","Street Racing":"#B52DAE","Cross-Country":"#199149","Touge":"#12D8D3","Drag Racing":"#E51F79"};
 const CLASS_COLOR = {"X":"#19D858","R":"#D61A9C","S2":"#165EDB","S1":"#B960E8","A":"#FF1A46","B":"#FF632C","C":"#FFC533","D":"#42BDF4"};
+
+// ---------------------------------------------------------------------
+// Badge colour math
+//
+// Two things used to be hardcoded per component, and both produced
+// unreadable chips for at least one colour in the palette:
+// Filled chips (class badges, coverage headers) are handled entirely in CSS
+// now: white ink plus a dark halo, matching how FH6 draws its own class
+// badges. An earlier version picked the ink per colour by luminance, which
+// maximised contrast but meant S2 and R came out white while the other six
+// came out black -- correct by the numbers, visibly inconsistent, and not
+// what the game does.
+//
+// What still needs deriving is the OUTLINE chip: there the accent colour
+// itself is the text, sitting on the dark panel, and several brand colours
+// aren't legible that way straight out of the palette.
+// ---------------------------------------------------------------------
+function hexToRgb(hex){
+  const clean = String(hex).replace("#", "");
+  const full = clean.length === 3 ? clean.split("").map(c=>c+c).join("") : clean;
+  return [0, 2, 4].map(i => parseInt(full.slice(i, i + 2), 16) || 0);
+}
+function hexToRgba(hex, alpha){
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+function relLuminance(rgb){
+  const c = rgb.map(v => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+function contrastRatio(rgbA, rgbB){
+  const a = relLuminance(rgbA), b = relLuminance(rgbB);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+const PANEL_RGB = hexToRgb("#15161C");
+const panelInkCache = new Map();
+// For OUTLINE chips: the accent colour blended toward white only as far as it
+// takes to clear `target` against the panel, so colours that are already
+// legible (Touge, Road Racing) come back completely untouched and only the
+// dark ones (Street Racing, Drag Racing) get lifted.
+function readableOnPanel(hex, target = 5.2){
+  const key = hex + "|" + target;
+  let cached = panelInkCache.get(key);
+  if(cached) return cached;
+  const base = hexToRgb(hex);
+  let result = "#FFFFFF";
+  for(let step = 0; step <= 100; step++){
+    const mix = base.map(v => v + (255 - v) * (step / 100));
+    if(contrastRatio(mix, PANEL_RGB) >= target){
+      result = "#" + mix.map(v => Math.round(v).toString(16).padStart(2, "0")).join("");
+      break;
+    }
+  }
+  panelInkCache.set(key, result);
+  return result;
+}
 const DIRT_ROUTES = [
   {name:"Airfield Trail", dirt:50},
   {name:"Bamboo Forest Scramble", dirt:20},
@@ -1567,6 +1945,7 @@ const SPIN_UNLOCK_CARS = [
   ["1965 Shelby Cobra Daytona Coupe", ["super"]],
   ["1998 Subaru Impreza 22B-STi Version", ["super"]],
   ["2022 Subaru BRZ Forza Edition", ["super"]],
+  ["1971 Nissan Skyline 2000GT-R", ["super"]],
   ["1993 Toyota #1 T100 Baja Truck", ["super"]],
   ["2013 Toyota 86 Stories", ["super"]],
 
@@ -1574,7 +1953,6 @@ const SPIN_UNLOCK_CARS = [
   ["2012 Lamborghini Aventador LP700-4", ["regular3"]],
   ["1962 Lincoln Continental", ["regular3"]],
   ["2021 McLaren Sabre", ["regular3"]],
-  ["1971 Nissan Skyline 2000GT-R", ["super"]],
 
   ["1965 Alfa Romeo Giulia Sprint GTA Stradale", ["regular"]],
   ["1986 Audi #2 Audi Sport quattro S1", ["regular"]],
@@ -1634,7 +2012,6 @@ const SUPER_WHEELSPIN_BRAND_RULES = [
   ["Porsche","Porsche"],
   ["Rimac","Rimac"],
   ["Shelby","Shelby"],
-  ["Cobra Shelby","Shelby"],
   ["Subaru","Subaru"],
   ["Toyota","Toyota"],
   ["Volkswagen","Volkswagen"],
@@ -1729,219 +2106,511 @@ function globalFadeForProgress(p){
   return Math.max(0, 1 - (p - FADE_START) / (1 - FADE_START));
 }
 
-// ---- Spring: sakura petals, notched tip ----
-function spawnSpringParticle(w, h){
-  // Speed is derived from the actual viewport height (crossing it in
-  // 2.4-3.7s) rather than a flat px/s range, so it scales sanely across
-  // short and tall viewports. A petal doesn't need to land by any particular
-  // time -- however far it's gotten when the burst ends, it just dissolves
-  // in place along with everything else (see globalFadeForProgress).
-  return {
-    x: Math.random() * w,
-    y: -30 - Math.random() * 60,
-    size: 10 + Math.random() * 14,
-    fallSpeed: h / (2.4 + Math.random() * 1.3),
-    swayFreq: 0.6 + Math.random() * 0.8,
-    swayPhase: Math.random() * Math.PI * 2,
-    rotation: Math.random() * Math.PI * 2,
-    rotationSpeed: (Math.random() - 0.5) * 3,
-    color: Math.random() < 0.5 ? "#FFD3E6" : "#FF9EC6",
-    alpha: 0.85 + Math.random() * 0.15,
-    done: false
-  };
+// ---------------------------------------------------------------------
+// Particle rendering
+//
+// Each season's shape is rasterised ONCE per colour variant into a small
+// offscreen canvas when the burst starts, then blitted with drawImage --
+// instead of rebuilding a multi-curve path per particle per frame. The
+// speed matters (110-140 particles at 60fps, and the maple leaf is a
+// 15-segment path), but the bigger win is that detail becomes free: the
+// leaf can afford real lobe-length variation, veins and a stem, and the
+// petal a notch deep enough to actually read, at no per-frame cost.
+//
+// Everything also now hangs off a single `depth` value per particle rather
+// than independent randoms. Size, fall speed, opacity and how hard the wind
+// pushes it are all derived from it, so a big particle is reliably a NEAR
+// one -- falling faster, fully opaque -- and a small one is far, slow and
+// faint. Previously those were rolled separately, which produced large slow
+// faint particles and tiny fast bright ones: individually plausible, but
+// with no consistent depth for the eye to lock onto, the whole field read
+// as flat noise.
+// ---------------------------------------------------------------------
+const SPRITE_BOX = 72;
+
+function makeSprite(paint){
+  const canvas = document.createElement("canvas");
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = SPRITE_BOX * dpr;
+  canvas.height = SPRITE_BOX * dpr;
+  const g = canvas.getContext("2d");
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.translate(SPRITE_BOX / 2, SPRITE_BOX / 2);
+  paint(g, SPRITE_BOX);
+  return canvas;
 }
-// Traced directly from the header logo's own sakura petal path (the
-// #sakuraPetal <defs> in the burst-mode SVG: "M12,12 C10.2,10.8 9.6,8.3
-// 10.7,6.3 Q11.4,5.1 12,5.9 Q12.6,5.1 13.3,6.3 C14.4,8.3 13.8,10.8 12,12"),
-// re-centered on its own midpoint and scaled to an arbitrary particle
-// size, instead of the old plain lens-shaped petal that never had the
-// notched tip -- so the falling particles and the logo are provably the
-// same shape, the same way momiji's icon and leaves already are.
-function drawSpringParticle(ctx, p, now, fade = 1){
+
+function polarPoint(angle, radius){
+  return [Math.sin(angle) * radius, -Math.cos(angle) * radius];
+}
+
+// Shared blit for the three falling seasons. The horizontal scale by
+// cos(flutter) is what turns a flat spinning sticker into something
+// tumbling: a real petal or leaf rotates about an axis in its own plane, so
+// it periodically turns edge-on and momentarily disappears. Squashing width
+// on a cosine reproduces that -- including the mirrored half of the cycle,
+// when the far face comes back around.
+function blitFallingParticle(ctx, p, sprites, fade, flutterFloor){
+  const sprite = sprites[p.spriteIndex];
+  if(!sprite) return;
+  const squash = Math.cos(p.flutter);
+  const scaleX = flutterFloor + (1 - flutterFloor) * squash;
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.rotate(p.rotation);
+  ctx.scale(scaleX, 1);
   ctx.globalAlpha = p.alpha * fade;
-  ctx.fillStyle = p.color;
-  const s = p.size;
-  ctx.beginPath();
-  ctx.moveTo(0, s * 0.5);
-  ctx.bezierCurveTo(-s * 0.2609, s * 0.3261, -s * 0.3478, -s * 0.0362, -s * 0.1884, -s * 0.3261);
-  ctx.quadraticCurveTo(-s * 0.0870, -s * 0.5, 0, -s * 0.3841);
-  ctx.quadraticCurveTo(s * 0.0870, -s * 0.5, s * 0.1884, -s * 0.3261);
-  ctx.bezierCurveTo(s * 0.3478, -s * 0.0362, s * 0.2609, s * 0.3261, 0, s * 0.5);
-  ctx.fill();
+  ctx.drawImage(sprite, -p.size / 2, -p.size / 2, p.size, p.size);
   ctx.restore();
 }
-function updateSpringParticle(p, dt, now, w, h){
-  // *dt (real elapsed seconds), not the original sakura-only burst's fixed
-  // /60-per-frame math -- the original assumes a flat 60fps, so its actual
-  // fall speed silently scales with whatever refresh rate the display
-  // renders at (faster on 120/144Hz screens, slower under frame drops).
-  // *dt keeps the same real-world speed regardless of frame rate, matching
-  // how the other three seasons already work. This is a deliberate
-  // improvement over the stable build, not a mistake -- carry the same fix
-  // back to index.html's own sakura burst once this file is approved.
-  p.y += p.fallSpeed * dt;
-  // The sway term is an accumulating per-call nudge, not a bounded
-  // oscillation -- so it needs the same *dt*60 frame-rate normalization as
-  // the fall speed above (0.6 was tuned assuming ~60 calls/sec; *dt*60
-  // keeps that same real-world drift rate at any actual frame rate).
-  p.x += Math.sin(now / 1000 * p.swayFreq + p.swayPhase) * 0.6 * dt * 60;
-  p.rotation += p.rotationSpeed * dt;
-  // A one-shot bloom, not a loop: recycling a petal back to the top here
-  // (as the original code did) starts a brand-new fall mid-burst that then
-  // gets hard-clipped when the transition's timer runs out, reading as
-  // "a few more rows start falling right as it cuts off." Marking it done
-  // and letting runPetalTransition's frame loop drop and replace it is
-  // correct instead -- that's also what keeps petals spawning continuously
-  // for the whole burst instead of visibly running out near the top.
-  if(p.y > h + 30) p.done = true;
+
+// ---- Spring: sakura petals ----
+// The notch at the tip is the entire visual signature of a cherry petal.
+// The previous outline dipped about 12% of the petal's height, which at a
+// 10-24px particle is one or two pixels -- it vanished, and the shape read
+// as a plain teardrop. This one cuts ~29%, matched by the header logo's own
+// petal path so the mark and the falling petals stay the same shape.
+function sakuraPetalPath(g, size){
+  const h = size * 0.46, w = size * 0.30;
+  g.beginPath();
+  g.moveTo(0, h);
+  g.bezierCurveTo(-w * 1.05, h * 0.52, -w * 1.14, -h * 0.30, -w * 0.58, -h * 0.82);
+  g.quadraticCurveTo(-w * 0.36, -h * 1.00, -w * 0.22, -h * 0.92);
+  g.quadraticCurveTo(0, -h * 0.50, w * 0.22, -h * 0.92);
+  g.quadraticCurveTo(w * 0.36, -h * 1.00, w * 0.58, -h * 0.82);
+  g.bezierCurveTo(w * 1.14, -h * 0.30, w * 1.05, h * 0.52, 0, h);
+  g.closePath();
 }
 
-// ---- Summer: hotaru (fireflies) -- slow wandering drift + pulsing glow ----
-function spawnSummerParticle(w, h){
+const SAKURA_COLORS = [
+  ["#FFE1EE", "#FF9EC6"],
+  ["#FFD3E6", "#F87BB0"],
+  ["#FFF0F6", "#FFB4D4"]
+];
+function buildSpringSprites(){
+  return SAKURA_COLORS.map(([light, deep]) => makeSprite((g, size) => {
+    sakuraPetalPath(g, size);
+    // Base-to-tip gradient gives the petal a body instead of a flat
+    // silhouette -- free here, since this runs once per variant.
+    const grad = g.createLinearGradient(0, size * 0.46, 0, -size * 0.46);
+    grad.addColorStop(0, deep);
+    grad.addColorStop(1, light);
+    g.fillStyle = grad;
+    g.fill();
+    // A single faint centre vein, the one interior detail that survives
+    // being scaled down to particle size.
+    g.strokeStyle = "rgba(255,255,255,.34)";
+    g.lineWidth = size * 0.012;
+    g.beginPath();
+    g.moveTo(0, size * 0.40);
+    g.lineTo(0, -size * 0.24);
+    g.stroke();
+  }));
+}
+
+function spawnSpringParticle(w, h){
+  // Fall speed is derived from the actual viewport height rather than a flat
+  // px/s range, so it scales sanely across short and tall viewports. A petal
+  // doesn't need to land by any particular time -- however far it's gotten
+  // when the burst ends, it dissolves in place with everything else.
+  const depth = Math.random();
   return {
+    depth,
+    x: Math.random() * w,
+    y: -40 - Math.random() * 90,
+    size: 9 + depth * 16,
+    fallSpeed: h / (4.1 - depth * 1.8),
+    swayFreq: 0.6 + Math.random() * 0.8,
+    swayPhase: Math.random() * Math.PI * 2,
+    swayAmp: 0.45 + Math.random() * 0.5,
+    rotation: Math.random() * Math.PI * 2,
+    rotationSpeed: (Math.random() - 0.5) * 1.7,
+    flutter: Math.random() * Math.PI * 2,
+    flutterSpeed: 1.4 + Math.random() * 2.2,
+    spriteIndex: Math.floor(Math.random() * SAKURA_COLORS.length),
+    alpha: 0.4 + depth * 0.55,
+    done: false
+  };
+}
+function drawSpringParticle(ctx, p, now, fade, sprites){
+  blitFallingParticle(ctx, p, sprites, fade, 0.12);
+}
+function updateSpringParticle(p, dt, now, w, h, wind){
+  // *dt (real elapsed seconds), not fixed /60-per-frame math -- the latter
+  // assumes a flat 60fps, so actual fall speed would silently scale with
+  // whatever refresh rate the display renders at (faster on 120/144Hz
+  // screens, slower under frame drops).
+  p.y += p.fallSpeed * dt;
+  // Sway is the petal's own oscillation; wind is a slow field shared by
+  // every particle, scaled by depth so near petals get pushed further than
+  // distant ones -- which is the same parallax cue the size and speed carry.
+  p.x += (Math.sin(now / 1000 * p.swayFreq + p.swayPhase) * 34 * p.swayAmp + wind * (0.35 + p.depth * 0.9)) * dt;
+  p.rotation += p.rotationSpeed * dt;
+  p.flutter += p.flutterSpeed * dt;
+  // A one-shot bloom, not a loop: recycling a petal back to the top starts a
+  // brand-new fall mid-burst that then gets hard-clipped when the timer runs
+  // out, reading as "a few more rows start falling right as it cuts off."
+  // Marking it done and letting the frame loop drop and replace it is what
+  // keeps petals spawning continuously for the whole burst instead.
+  if(p.y > h + 40) p.done = true;
+}
+
+// ---- Summer: hotaru (fireflies) ----
+// Drawn from a pre-rendered radial-gradient sprite rather than a hard-edged
+// arc plus ctx.shadowBlur. Two gains: shadowBlur is one of the most
+// expensive things in the 2D context and was being recomputed per particle
+// per frame, and a gradient gives a genuine soft falloff instead of a
+// crisp disc wearing a halo. Composited with "lighter" so overlapping
+// fireflies bloom into each other the way real points of light do.
+const HOTARU_COLORS = ["#E8FF6B", "#D4FF9A", "#FFF6A8"];
+function buildSummerSprites(){
+  return HOTARU_COLORS.map(color => makeSprite((g, size) => {
+    const r = size * 0.5;
+    const grad = g.createRadialGradient(0, 0, 0, 0, 0, r);
+    grad.addColorStop(0, "rgba(255,255,255,.95)");
+    grad.addColorStop(0.12, color);
+    grad.addColorStop(0.34, hexToRgba(color, .38));
+    grad.addColorStop(1, hexToRgba(color, 0));
+    g.fillStyle = grad;
+    g.beginPath();
+    g.arc(0, 0, r, 0, Math.PI * 2);
+    g.fill();
+  }));
+}
+function spawnSummerParticle(w, h){
+  const depth = Math.random();
+  return {
+    depth,
     x: Math.random() * w,
     y: Math.random() * h,
-    size: 2.5 + Math.random() * 2.5,
+    size: 14 + depth * 26,
     vx: (Math.random() - 0.5) * 16,
     vy: (Math.random() - 0.5) * 12,
     wanderPhase: Math.random() * Math.PI * 2,
     wanderFreq: 0.15 + Math.random() * 0.25,
     pulsePhase: Math.random() * Math.PI * 2,
     pulseFreq: 0.5 + Math.random() * 0.7,
-    color: Math.random() < 0.6 ? "#E8FF6B" : "#D4FF9A"
+    // Real fireflies don't glow steadily -- they idle low and flash. A second,
+    // much slower and sharper term on top of the base pulse produces an
+    // occasional bright flare rather than everything breathing in unison.
+    flashPhase: Math.random() * Math.PI * 2,
+    flashFreq: 0.16 + Math.random() * 0.22,
+    spriteIndex: Math.floor(Math.random() * HOTARU_COLORS.length),
+    alpha: 0.35 + depth * 0.65,
+    done: false
   };
 }
-function drawSummerParticle(ctx, p, now, fade = 1){
-  const glow = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(now/1000 * p.pulseFreq * Math.PI * 2 + p.pulsePhase));
+function drawSummerParticle(ctx, p, now, fade, sprites){
+  const sprite = sprites[p.spriteIndex];
+  if(!sprite) return;
+  const t = now / 1000;
+  const base = 0.28 + 0.42 * (0.5 + 0.5 * Math.sin(t * p.pulseFreq * Math.PI * 2 + p.pulsePhase));
+  const flashWave = Math.sin(t * p.flashFreq * Math.PI * 2 + p.flashPhase);
+  const flash = Math.pow(Math.max(0, flashWave), 9);
+  const glow = Math.min(1, base + flash * 0.85);
+  const scale = 0.82 + glow * 0.34;
   ctx.save();
-  ctx.globalAlpha = glow * fade;
-  ctx.shadowColor = p.color;
-  ctx.shadowBlur = 12 * glow;
-  ctx.fillStyle = p.color;
-  ctx.beginPath();
-  ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = Math.min(1, glow * p.alpha * fade);
+  const drawn = p.size * scale;
+  ctx.drawImage(sprite, p.x - drawn / 2, p.y - drawn / 2, drawn, drawn);
   ctx.restore();
 }
-function updateSummerParticle(p, dt, now, w, h){
+function updateSummerParticle(p, dt, now, w, h, wind){
   p.vx += Math.sin(now/1000 * p.wanderFreq + p.wanderPhase) * 6 * dt;
   p.vy += Math.cos(now/1000 * p.wanderFreq * 1.3 + p.wanderPhase) * 6 * dt;
   p.vx = Math.max(-20, Math.min(20, p.vx));
   p.vy = Math.max(-16, Math.min(16, p.vy));
-  p.x += p.vx * dt;
+  p.x += (p.vx + wind * 0.22 * (0.4 + p.depth)) * dt;
   p.y += p.vy * dt;
-  if(p.x < -10) p.x = w + 10;
-  if(p.x > w + 10) p.x = -10;
-  if(p.y < -10) p.y = h + 10;
-  if(p.y > h + 10) p.y = -10;
+  // Wrapped well outside the viewport rather than at 10px, so a firefly's
+  // soft halo -- which can be 20px across on the near ones -- is fully off
+  // screen before it teleports, instead of visibly popping at the edge.
+  const margin = p.size;
+  if(p.x < -margin) p.x = w + margin;
+  if(p.x > w + margin) p.x = -margin;
+  if(p.y < -margin) p.y = h + margin;
+  if(p.y > h + margin) p.y = -margin;
 }
 
-// ---- Autumn: momiji leaves, 5-lobed maple silhouette, tumbling fall ----
+// ---- Autumn: momiji (Japanese maple) leaves ----
+// The previous shape placed five equal-length lobes at even 72-degree
+// spacing around a circle with a shallow sinus between them. That is the
+// construction for a five-pointed STAR, and at every size that is exactly
+// what it looked like -- the code comment beside it argued the taper kept it
+// reading as a leaf, but it did not.
+//
+// A real Acer palmatum leaf is asymmetric top to bottom: one long lobe
+// straight up, a slightly shorter pair out to the sides, and a distinctly
+// shorter pair swept DOWN and back toward the stem, with the cuts between
+// lobes running deep toward the centre and a stem hanging off the base. The
+// bottom pair pointing downward is what stops the silhouette from being
+// radially symmetric, and radial symmetry is what made it a star.
+// These five numbers were picked by rendering the leaf across a sweep of
+// widths, base radii and tooth counts at real particle sizes and choosing by
+// eye, not derived. Two of them do the heavy lifting: LOBE_W (how broad a
+// lobe is at its base) and BASE_R (how far out the lobes start, i.e. how
+// much solid leaf there is in the middle). Narrow lobes springing from a
+// tight centre is precisely the construction of a star -- push both up and
+// the same five lobes become a leaf. Past roughly W 0.40 / BASE 0.44 it
+// overshoots into a blob with no lobe separation left.
+const MOMIJI_LOBES = [
+  {angle: -2.30, len: 0.62},
+  {angle: -1.15, len: 0.88},
+  {angle:  0.00, len: 1.00},
+  {angle:  1.15, len: 0.88},
+  {angle:  2.30, len: 0.62}
+];
+const MOMIJI_BASE_R = 0.40;   // fraction of R where the lobes spring from
+const MOMIJI_LOBE_W = 0.34;   // fraction of R -- half-width of a lobe at its base
+const MOMIJI_TEETH = 7;
+const MOMIJI_TOOTH_DEPTH = 0.80;
+
+// Each lobe is built as an explicit outline rather than a curve to a point:
+// up the left edge from a BROAD base, across the tip, back down the right
+// edge -- with the half-width tapering on a power curve and every other
+// vertex pulled inward to cut teeth into both edges.
+//
+// The first attempt at fixing this only changed the lobes' lengths and
+// angles, and still rendered an unmistakable star, because length was never
+// the problem: five narrow spikes radiating from a point IS a star, whatever
+// their individual lengths. What makes a maple read as a maple is that each
+// lobe leaves the centre WIDE (adjacent lobes nearly touch at their bases,
+// so the leaf has a solid middle instead of a hub) and carries serrated
+// edges the whole way out. Those two properties, not the outline count, are
+// what the eye is actually reading.
+function momijiLobeOutline(lobe, R){
+  const a = lobe.angle, L = R * lobe.len, baseR = R * MOMIJI_BASE_R;
+  const dx = Math.sin(a), dy = -Math.cos(a);
+  const nx = Math.cos(a), ny = Math.sin(a);
+  const at = (u, v) => [dx * v + nx * u, dy * v + ny * u];
+  const halfWidth = t => R * MOMIJI_LOBE_W * Math.pow(1 - t, 0.62);
+  const points = [];
+  for(let i = 0; i < MOMIJI_TEETH; i++){
+    const t = i / MOMIJI_TEETH;
+    points.push(at(-halfWidth(t) * (i % 2 === 0 ? 1 : MOMIJI_TOOTH_DEPTH), baseR + (L - baseR) * t));
+  }
+  points.push(at(0, L));
+  for(let i = MOMIJI_TEETH - 1; i >= 0; i--){
+    const t = i / MOMIJI_TEETH;
+    points.push(at(halfWidth(t) * (i % 2 === 0 ? 1 : MOMIJI_TOOTH_DEPTH), baseR + (L - baseR) * t));
+  }
+  return points;
+}
+
+function momijiLeafPath(g, size){
+  const R = size * 0.45;
+  const points = [];
+  MOMIJI_LOBES.forEach(lobe => points.push(...momijiLobeOutline(lobe, R)));
+  // Explicit vertex at the very bottom, between the two down-swept lobes,
+  // so the outline closes through a real leaf base -- the point the stem
+  // hangs from -- instead of cutting a straight chord under the middle.
+  points.push([0, R * MOMIJI_BASE_R * 1.15]);
+  g.beginPath();
+  points.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y));
+  g.closePath();
+}
+
+function momijiVeinPath(g, size){
+  const R = size * 0.45;
+  g.beginPath();
+  MOMIJI_LOBES.forEach(lobe => {
+    const tip = polarPoint(lobe.angle, R * lobe.len * 0.78);
+    g.moveTo(0, R * MOMIJI_BASE_R * 0.75);
+    g.lineTo(tip[0], tip[1]);
+  });
+}
+
+function momijiStemPath(g, size){
+  const R = size * 0.45;
+  g.beginPath();
+  g.moveTo(0, R * MOMIJI_BASE_R);
+  g.lineTo(0, R * 0.74);
+}
+
+const MOMIJI_COLORS = [
+  ["#F2A63A", "#D9541E"],
+  ["#E8792F", "#B8391A"],
+  ["#F0B457", "#C7551F"],
+  ["#D94F22", "#8E2A12"],
+  ["#C77B3D", "#93451C"]
+];
+function buildAutumnSprites(){
+  return MOMIJI_COLORS.map(([light, deep]) => makeSprite((g, size) => {
+    momijiLeafPath(g, size);
+    const grad = g.createLinearGradient(0, -size * 0.45, 0, size * 0.45);
+    grad.addColorStop(0, light);
+    grad.addColorStop(1, deep);
+    g.fillStyle = grad;
+    g.fill();
+    g.strokeStyle = "rgba(90,30,10,.30)";
+    g.lineWidth = size * 0.014;
+    momijiVeinPath(g, size);
+    g.stroke();
+    g.strokeStyle = deep;
+    g.lineWidth = size * 0.024;
+    g.lineCap = "round";
+    momijiStemPath(g, size);
+    g.stroke();
+  }));
+}
+
 function spawnAutumnParticle(w, h){
+  const depth = Math.random();
   return {
+    depth,
     x: Math.random() * w,
-    y: -30 - Math.random() * 60,
-    size: 14 + Math.random() * 14,
-    fallSpeed: h / (3.2 + Math.random() * 1.6),
+    y: -40 - Math.random() * 90,
+    // Leaves run larger than petals -- both because they physically are, and
+    // because below roughly 16px the serrations stop resolving and the
+    // silhouette slides back toward the star it used to be.
+    size: 17 + depth * 25,
+    fallSpeed: h / (5.0 - depth * 1.9),
     swayFreq: 0.5 + Math.random() * 0.7,
     swayPhase: Math.random() * Math.PI * 2,
+    swayAmp: 0.6 + Math.random() * 0.7,
     rotation: Math.random() * Math.PI * 2,
-    rotationSpeed: (Math.random() - 0.5) * 4.5,
-    color: ["#E8792F","#D9541E","#C77B3D","#B8391A","#F0A030"][Math.floor(Math.random()*5)],
-    alpha: 0.85 + Math.random() * 0.15,
+    rotationSpeed: (Math.random() - 0.5) * 2.6,
+    // Leaves tumble harder than petals -- a broad flat blade catches air on
+    // both faces, so it turns over faster and more completely.
+    flutter: Math.random() * Math.PI * 2,
+    flutterSpeed: 2.2 + Math.random() * 3.0,
+    spriteIndex: Math.floor(Math.random() * MOMIJI_COLORS.length),
+    alpha: 0.45 + depth * 0.5,
     done: false
   };
 }
-// Each lobe tapers from a sharp-cornered sinus (the notch between lobes) out
-// to a genuine point at the tip via a single quadratic curve per side, with
-// the curve's control point pulled out to 0.62 of the tip radius -- that's
-// what gives the lobe a leaf-blade taper (widest partway out, then narrowing
-// to a point) instead of the old dead-straight lineTo silhouette, which just
-// read as a plain 5-pointed star. A wider belly (higher control radius) reads
-// as a flower; a lower one collapses back into a star -- 0.62 was the point
-// where it holds a leaf silhouette without going either direction.
-function drawAutumnParticle(ctx, p, now, fade = 1){
-  ctx.save();
-  ctx.translate(p.x, p.y);
-  ctx.rotate(p.rotation);
-  ctx.globalAlpha = p.alpha * fade;
-  ctx.fillStyle = p.color;
-  const s = p.size / 2;
-  const LOBES = 5;
-  const step = Math.PI * 2 / LOBES;
-  const sinusR = s * 0.42;
-  const bellyR = s * 0.62;
-  ctx.beginPath();
-  for(let i = 0; i < LOBES; i++){
-    const tipA = step * i - Math.PI / 2;
-    const tipX = Math.cos(tipA) * s, tipY = Math.sin(tipA) * s;
-    const sinusBeforeA = tipA - step / 2, sinusAfterA = tipA + step / 2;
-    const bellyBeforeA = tipA - step * 0.34, bellyAfterA = tipA + step * 0.34;
-    if(i === 0) ctx.moveTo(Math.cos(sinusBeforeA) * sinusR, Math.sin(sinusBeforeA) * sinusR);
-    ctx.quadraticCurveTo(Math.cos(bellyBeforeA) * bellyR, Math.sin(bellyBeforeA) * bellyR, tipX, tipY);
-    ctx.quadraticCurveTo(Math.cos(bellyAfterA) * bellyR, Math.sin(bellyAfterA) * bellyR, Math.cos(sinusAfterA) * sinusR, Math.sin(sinusAfterA) * sinusR);
-  }
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
+function drawAutumnParticle(ctx, p, now, fade, sprites){
+  blitFallingParticle(ctx, p, sprites, fade, 0.08);
 }
-function updateAutumnParticle(p, dt, now, w, h){
+function updateAutumnParticle(p, dt, now, w, h, wind){
   p.y += p.fallSpeed * dt;
-  p.x += Math.sin(now / 1000 * p.swayFreq + p.swayPhase) * 1.1 * dt * 60;
+  p.x += (Math.sin(now / 1000 * p.swayFreq + p.swayPhase) * 46 * p.swayAmp + wind * (0.45 + p.depth * 1.15)) * dt;
   p.rotation += p.rotationSpeed * dt;
-  if(p.y > h + 30) p.done = true;
+  p.flutter += p.flutterSpeed * dt;
+  if(p.y > h + 45) p.done = true;
 }
 
-// ---- Winter: snow -- same rotating, two-tone structure as spring's
-// petals instead of plain drifting dots, so it reads as "a shape falling"
-// the same way sakura does rather than generic dust. ----
+// ---- Winter: yuki (snow) ----
+// Every flake used to be the same six-armed drawing with the same branch at
+// the same place, varying only in size and angle -- so a screenful read as
+// one flake stamped 120 times. Real snow is a family of related crystals,
+// so this builds several distinct dendrite layouts and, critically, mixes in
+// plain soft grains for the smallest ones: at 8-10px an intricate crystal
+// resolves to grey mush anyway, and distant snow genuinely does read as
+// featureless specks. Detail where it can be seen, none where it can't.
+const SNOWFLAKE_VARIANTS = [
+  {branches: [[0.50, 0.26], [0.74, 0.17]], tipFork: 0.16, core: 0.13},
+  {branches: [[0.58, 0.30]], tipFork: 0.20, core: 0.10},
+  {branches: [[0.40, 0.20], [0.62, 0.24], [0.82, 0.14]], tipFork: 0, core: 0.16},
+  {branches: [[0.66, 0.28]], tipFork: 0, core: 0.20}
+];
+
+function snowflakePath(g, size, variant){
+  const r = size * 0.44;
+  g.beginPath();
+  for(let arm = 0; arm < 6; arm++){
+    const a = (Math.PI / 3) * arm;
+    const cos = Math.cos(a), sin = Math.sin(a);
+    const at = (x, y) => [x * cos - y * sin, x * sin + y * cos];
+    const spine = at(0, -r);
+    g.moveTo(0, 0);
+    g.lineTo(spine[0], spine[1]);
+    variant.branches.forEach(([along, out]) => {
+      const root = at(0, -r * along);
+      const left = at(-r * out, -r * (along + out * 0.85));
+      const right = at(r * out, -r * (along + out * 0.85));
+      g.moveTo(root[0], root[1]);
+      g.lineTo(left[0], left[1]);
+      g.moveTo(root[0], root[1]);
+      g.lineTo(right[0], right[1]);
+    });
+    if(variant.tipFork){
+      const root = at(0, -r * 0.9);
+      const left = at(-r * variant.tipFork, -r);
+      const right = at(r * variant.tipFork, -r);
+      g.moveTo(root[0], root[1]);
+      g.lineTo(left[0], left[1]);
+      g.moveTo(root[0], root[1]);
+      g.lineTo(right[0], right[1]);
+    }
+  }
+}
+
+const SNOW_COLORS = ["#FFFFFF", "#DCEEFF", "#C3E0FF"];
+function buildWinterSprites(){
+  const sprites = [];
+  SNOWFLAKE_VARIANTS.forEach((variant, vi) => {
+    const color = SNOW_COLORS[vi % SNOW_COLORS.length];
+    sprites.push(makeSprite((g, size) => {
+      g.strokeStyle = color;
+      g.lineWidth = size * 0.038;
+      g.lineCap = "round";
+      g.lineJoin = "round";
+      snowflakePath(g, size, variant);
+      g.stroke();
+      if(variant.core){
+        g.fillStyle = color;
+        g.beginPath();
+        g.arc(0, 0, size * variant.core * 0.5, 0, Math.PI * 2);
+        g.fill();
+      }
+    }));
+  });
+  // Two soft grains for the far field.
+  SNOW_COLORS.slice(0, 2).forEach(color => {
+    sprites.push(makeSprite((g, size) => {
+      const r = size * 0.5;
+      const grad = g.createRadialGradient(0, 0, 0, 0, 0, r);
+      grad.addColorStop(0, color);
+      grad.addColorStop(0.45, hexToRgba(color, .55));
+      grad.addColorStop(1, hexToRgba(color, 0));
+      g.fillStyle = grad;
+      g.beginPath();
+      g.arc(0, 0, r, 0, Math.PI * 2);
+      g.fill();
+    }));
+  });
+  return sprites;
+}
+
 function spawnWinterParticle(w, h){
+  const depth = Math.random();
+  const detailed = depth > 0.42;
   return {
+    depth,
     x: Math.random() * w,
-    y: -30 - Math.random() * 60,
-    size: 10 + Math.random() * 11,
-    fallSpeed: h / (4 + Math.random() * 2.5),
+    y: -40 - Math.random() * 90,
+    size: (detailed ? 11 : 5) + depth * (detailed ? 13 : 5),
+    fallSpeed: h / (6.6 - depth * 2.6),
     swayFreq: 0.4 + Math.random() * 0.6,
     swayPhase: Math.random() * Math.PI * 2,
+    swayAmp: 0.5 + Math.random() * 0.6,
     rotation: Math.random() * Math.PI * 2,
-    rotationSpeed: (Math.random() - 0.5) * 2,
-    color: Math.random() < 0.5 ? "#FFFFFF" : "#CFE9FF",
-    alpha: 0.75 + Math.random() * 0.25,
+    rotationSpeed: (Math.random() - 0.5) * 1.1,
+    // A rigid crystal wobbles rather than turning fully over, so its flutter
+    // never squashes anywhere near edge-on the way a petal or leaf does.
+    flutter: Math.random() * Math.PI * 2,
+    flutterSpeed: 0.7 + Math.random() * 1.2,
+    spriteIndex: detailed
+      ? Math.floor(Math.random() * SNOWFLAKE_VARIANTS.length)
+      : SNOWFLAKE_VARIANTS.length + Math.floor(Math.random() * 2),
+    alpha: 0.35 + depth * 0.6,
     done: false
   };
 }
-function drawWinterParticle(ctx, p, now, fade = 1){
-  ctx.save();
-  ctx.translate(p.x, p.y);
-  ctx.rotate(p.rotation);
-  ctx.globalAlpha = p.alpha * fade;
-  ctx.strokeStyle = p.color;
-  ctx.lineWidth = Math.max(1, p.size * 0.09);
-  ctx.lineCap = "round";
-  const s = p.size / 2;
-  for(let i = 0; i < 6; i++){
-    ctx.save();
-    ctx.rotate((Math.PI / 3) * i);
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, -s);
-    ctx.moveTo(0, -s * 0.55);
-    ctx.lineTo(-s * 0.22, -s * 0.75);
-    ctx.moveTo(0, -s * 0.55);
-    ctx.lineTo(s * 0.22, -s * 0.75);
-    ctx.stroke();
-    ctx.restore();
-  }
-  ctx.restore();
+function drawWinterParticle(ctx, p, now, fade, sprites){
+  // Highest flutter floor of the three: a crystal is rigid and broad, so it
+  // rocks rather than turning over, and squashing it as far as a petal does
+  // reads as the flake being stretched instead of tilted.
+  blitFallingParticle(ctx, p, sprites, fade, 0.76);
 }
-function updateWinterParticle(p, dt, now, w, h){
+function updateWinterParticle(p, dt, now, w, h, wind){
   p.y += p.fallSpeed * dt;
-  p.x += Math.sin(now / 1000 * p.swayFreq + p.swayPhase) * 0.6 * dt * 60;
+  p.x += (Math.sin(now / 1000 * p.swayFreq + p.swayPhase) * 28 * p.swayAmp + wind * (0.5 + p.depth * 1.0)) * dt;
   p.rotation += p.rotationSpeed * dt;
-  if(p.y > h + 30) p.done = true;
+  p.flutter += p.flutterSpeed * dt;
+  if(p.y > h + 40) p.done = true;
 }
 
 // Momiji's header-logo icon is a static canvas draw (canvas can't inherit
@@ -1963,31 +2632,19 @@ function drawMomijiLogo(targetId = "logoMomiji", displaySize = 30){
   c.style.width = displaySize + "px";
   c.style.height = displaySize + "px";
   c2d.setTransform(dpr, 0, 0, dpr, 0, 0);
-  c2d.translate(15, 16);
+  c2d.clearRect(0, 0, 30, 30);
+  c2d.translate(15, 15.5);
   c2d.strokeStyle = "#E8792F";
-  c2d.lineWidth = 1.3;
+  c2d.lineWidth = 1.25;
   c2d.lineJoin = "round";
   c2d.lineCap = "round";
-  const s = 10;
-  const LOBES = 5;
-  const step = Math.PI * 2 / LOBES;
-  const sinusR = s * 0.42;
-  const bellyR = s * 0.62;
-  c2d.beginPath();
-  for(let i = 0; i < LOBES; i++){
-    const tipA = step * i - Math.PI / 2;
-    const tipX = Math.cos(tipA) * s, tipY = Math.sin(tipA) * s;
-    const sinusBeforeA = tipA - step / 2, sinusAfterA = tipA + step / 2;
-    const bellyBeforeA = tipA - step * 0.34, bellyAfterA = tipA + step * 0.34;
-    if(i === 0) c2d.moveTo(Math.cos(sinusBeforeA) * sinusR, Math.sin(sinusBeforeA) * sinusR);
-    c2d.quadraticCurveTo(Math.cos(bellyBeforeA) * bellyR, Math.sin(bellyBeforeA) * bellyR, tipX, tipY);
-    c2d.quadraticCurveTo(Math.cos(bellyAfterA) * bellyR, Math.sin(bellyAfterA) * bellyR, Math.cos(sinusAfterA) * sinusR, Math.sin(sinusAfterA) * sinusR);
-  }
-  c2d.closePath();
+  // Same momijiLeafPath the falling leaves are rasterised from, so the mark
+  // and the particles remain literally the same geometry rather than two
+  // hand-matched approximations that can drift apart on a later edit.
+  const LEAF_BOX = 27;
+  momijiLeafPath(c2d, LEAF_BOX);
   c2d.stroke();
-  c2d.beginPath();
-  c2d.moveTo(0, s * 0.85);
-  c2d.lineTo(0, s * 0.85 + 3);
+  momijiStemPath(c2d, LEAF_BOX);
   c2d.stroke();
 }
 
@@ -2005,12 +2662,23 @@ function drawMomijiLogo(targetId = "logoMomiji", displaySize = 30){
 // wrap forever, so it's just how long its build-up should feel). It sets the
 // spawn rate (max/lifetime) so the population reaches a steady equilibrium
 // around max instead of front-loading into one synchronized cohort.
+// `wind` is the peak sideways push, in px/s, of the slow gust field shared
+// by every particle in that season (see windAt). Snow drifts hardest, petals
+// and leaves ride it moderately, fireflies barely notice it -- they fly
+// under their own power rather than being carried.
 const SEASON_PARTICLES = {
-  spring: {spawn: spawnSpringParticle, draw: drawSpringParticle, update: updateSpringParticle, max: 140, lifetime: 3.05, wash: "rgba(255,205,225,ALPHA)", washAlpha: 0.55},
-  summer: {spawn: spawnSummerParticle, draw: drawSummerParticle, update: updateSummerParticle, max: 52, lifetime: 1.5, wash: null, washAlpha: 0},
-  autumn: {spawn: spawnAutumnParticle, draw: drawAutumnParticle, update: updateAutumnParticle, max: 110, lifetime: 4.0, wash: "rgba(200,110,50,ALPHA)", washAlpha: 0.45},
-  winter: {spawn: spawnWinterParticle, draw: drawWinterParticle, update: updateWinterParticle, max: 120, lifetime: 5.25, wash: "rgba(220,235,255,ALPHA)", washAlpha: 0.45}
+  spring: {spawn: spawnSpringParticle, draw: drawSpringParticle, update: updateSpringParticle, buildSprites: buildSpringSprites, max: 140, lifetime: 3.05, wind: 52, wash: "rgba(255,205,225,ALPHA)", washAlpha: 0.55},
+  summer: {spawn: spawnSummerParticle, draw: drawSummerParticle, update: updateSummerParticle, buildSprites: buildSummerSprites, max: 52, lifetime: 1.5, wind: 18, wash: null, washAlpha: 0},
+  autumn: {spawn: spawnAutumnParticle, draw: drawAutumnParticle, update: updateAutumnParticle, buildSprites: buildAutumnSprites, max: 110, lifetime: 4.0, wind: 64, wash: "rgba(200,110,50,ALPHA)", washAlpha: 0.45},
+  winter: {spawn: spawnWinterParticle, draw: drawWinterParticle, update: updateWinterParticle, buildSprites: buildWinterSprites, max: 120, lifetime: 5.25, wind: 78, wash: "rgba(220,235,255,ALPHA)", washAlpha: 0.45}
 };
+
+// Two detuned sine waves, so the gust never settles into an obvious loop
+// over the burst's few seconds. Returns -1..1; the season's own `wind`
+// scales it into px/s and each particle's depth scales it again.
+function windAt(seconds){
+  return Math.sin(seconds * 0.62) * 0.62 + Math.sin(seconds * 0.23 + 1.7) * 0.38;
+}
 
 // Particle count alone can't reliably read as "the page is covered" -- it
 // depends on random placement not clumping badly on any given run. A soft
@@ -2066,6 +2734,10 @@ function runPetalTransition(season, onDone){
   // cohort (dense band at the leading and trailing edges, empty in between).
   const spawnRate = config.max / config.lifetime;
   let spawnBudget = 0;
+  // Rasterised once, here, for the whole burst -- not per particle and not
+  // per frame. Everything the shapes gained (gradients, veins, stems, four
+  // distinct snow crystals) costs exactly this one-time build.
+  const sprites = config.buildSprites();
 
   function frame(now){
     const dt = Math.min((now - lastTime) / 1000, 0.05);
@@ -2086,12 +2758,24 @@ function runPetalTransition(season, onDone){
       particles.push(config.spawn(w, h));
       spawnBudget -= 1;
     }
+    // Once the population is sitting at the cap, the budget above has nothing
+    // to spend itself on and would otherwise keep accumulating indefinitely --
+    // then dump that whole backlog into a single frame the moment particles
+    // start dying, which is exactly the synchronized-cohort burst the
+    // rate-based spawning exists to avoid. Carrying at most one particle's
+    // worth forward keeps refills paced even after a long time at the cap.
+    if(spawnBudget > 1) spawnBudget = 1;
 
     ctx.clearRect(0, 0, w, h);
     drawParticleWash(ctx, w, h, density * fade, config.wash, config.washAlpha);
+    const wind = windAt(elapsed / 1000) * config.wind;
+    // Far particles are painted first so near ones land on top of them. With
+    // size, speed, opacity and now stacking order all agreeing, the field
+    // resolves into layers instead of a single flat plane of shapes.
+    particles.sort((a, b) => a.depth - b.depth);
     particles.forEach(p => {
-      config.update(p, dt, now, w, h);
-      config.draw(ctx, p, now, fade);
+      config.update(p, dt, now, w, h, wind);
+      config.draw(ctx, p, now, fade, sprites);
     });
 
     if(progress < 1){
@@ -2107,16 +2791,20 @@ function runPetalTransition(season, onDone){
   requestAnimationFrame(frame);
 }
 
-function triggerSakuraBurst(){
+// afterBurst (optional) runs once the burst has fully finished AND on every
+// early-return path, so a caller that temporarily overrode global state for
+// the burst's duration is always handed control back -- including when the
+// burst never ran at all (already running, or reduced-motion).
+function triggerSakuraBurst(afterBurst){
   // Checked first and unconditionally, before the reduced-motion branch
   // below -- a still-running burst must block a second trigger either way,
   // motion preference aside, so this can never leave two calls racing to
   // both flip the logo and restore it out of order.
-  if(sakuraBurstRunning) return;
+  if(sakuraBurstRunning){ afterBurst?.(); return; }
   // Decorative only, so a reduced-motion preference just skips it outright
   // rather than offering some non-animated fallback -- there's no state
   // change underneath for a fallback to reveal.
-  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches){ afterBurst?.(); return; }
   // Which of the four marks blooms, and which particles fall, is decided
   // fresh on every trigger by getLiveSeason() -- never stored -- so it
   // always matches FH6's actual live season at the moment someone clicks,
@@ -2134,6 +2822,7 @@ function triggerSakuraBurst(){
     logoEl.classList.remove("blooming");
     toggleBtn.classList.remove("blooming");
     delete toggleBtn.dataset.season;
+    afterBurst?.();
   });
 }
 
@@ -2206,6 +2895,9 @@ let fh6CarsByModelName = new Map();
 let tabVisualState = "garage";
 let tabSwapTimer = 0;
 let tabEndTimer = 0;
+// Sequences the gauge collapse/expand against the panel swipe so the two
+// never animate at the same time (see switchTabWithSlide).
+let gaugeSeqTimer = 0;
 let activeSuggestionIndex = -1;
 let currentSuggestions = [];
 const TAB_ORDER = ["garage","coverage","spins","dirt"];
@@ -2221,6 +2913,19 @@ const TAB_TRANSITION_CLASSES = [
   "panel-slide-in-left",
   "panel-slide-in-right"
 ];
+
+// Car ids were previously minted three different ways -- Date.now() when
+// adding, Date.now()+Math.random() when repairing storage, idBase+index when
+// importing -- and the plain Date.now() path collides outright if two cars
+// are added inside the same millisecond (trivial to hit by holding Enter, and
+// a duplicate id makes edit/delete act on the wrong row). One monotonic
+// counter seeded past any existing id gives every path a unique value.
+let nextCarId = 1;
+function mintCarId(){ return nextCarId++; }
+function reseedCarIds(existing){
+  const highest = existing.reduce((max, car)=> typeof car.id === "number" && car.id > max ? car.id : max, 0);
+  nextCarId = Math.max(nextCarId, highest + 1);
+}
 
 function raceRank(r){ const i = RACE_ORDER.indexOf(r); return i<0?99:i; }
 function classRank(c){ const i = CLASS_ORDER.indexOf(c); return i<0?99:i; }
@@ -2343,7 +3048,7 @@ function load(){
       const migratedName = migrateOldYearFormat(car.name);
       if(migratedName !== car.name) anyMigrated = true;
       return {
-        id: typeof car.id === "number" ? car.id : Date.now() + Math.random(),
+        id: typeof car.id === "number" ? car.id : mintCarId(),
         name: migratedName,
         cls: car.cls,
         race: car.race,
@@ -2355,6 +3060,7 @@ function load(){
       console.error(`Dropped ${stored.length - clean.length} invalid car entr${stored.length - clean.length === 1 ? "y" : "ies"} from storage.`);
     }
     cars = clean;
+    reseedCarIds(cars);
     if(clean.length !== stored.length || anyMigrated) save();
   }
   renderAll();
@@ -2438,7 +3144,59 @@ function toggleOwnedWheelspinCar(car){
   if(ownedWheelspinCars.has(car)) ownedWheelspinCars.delete(car);
   else ownedWheelspinCars.add(car);
   saveOwnedWheelspinCars();
-  renderSuperWheelspinCars();
+  // Under Collected/Remaining a toggle changes which rows belong on screen at
+  // all, so the list genuinely has to be rebuilt. Under "All" -- the default,
+  // and where rapid check-off actually happens -- the only things that change
+  // are this one row, its brand's struck-through state, and the header count.
+  // Rebuilding all 142 rows (every element, every listener) for that is waste
+  // that grows with the list; this path touches a fixed handful of nodes.
+  if(wheelspinCollectionFilter !== "all"){
+    renderSuperWheelspinCars();
+    return;
+  }
+  updateSpinCarRow(car);
+  refreshSpinCounts();
+}
+
+function refreshSpinGroupComplete(section){
+  const group = getSuperWheelspinBrandGroups().find(g => g.title === section.dataset.brand);
+  const title = section.querySelector(".spin-group-title");
+  if(!group || !title) return;
+  // Measured against the brand's FULL car list, not whatever is rendered --
+  // a search can hide cars that are still uncollected, and "fully collected"
+  // has to mean the brand, not the current view.
+  const complete = group.cars.every(car => ownedWheelspinCars.has(spinCarName(car)));
+  title.classList.toggle("spin-group-title-complete", complete);
+}
+
+function updateSpinCarRow(carName){
+  const row = document.querySelector(`.spin-car[data-car="${CSS.escape(carName)}"]`);
+  if(!row) return;
+  const isOwned = ownedWheelspinCars.has(carName);
+  row.classList.toggle("owned", isOwned);
+  const check = row.querySelector(".spin-check");
+  if(check){
+    check.setAttribute("aria-pressed", String(isOwned));
+    check.setAttribute("aria-label", (isOwned ? "Mark as not collected: " : "Mark as collected: ") + carName);
+    check.title = isOwned ? "Collected" : "Mark as collected";
+  }
+  const section = row.closest(".spin-group");
+  if(section) refreshSpinGroupComplete(section);
+}
+
+function refreshSpinCounts(){
+  let total = 0, owned = 0;
+  getSuperWheelspinBrandGroups().forEach(group => group.cars.forEach(car => {
+    total++;
+    if(ownedWheelspinCars.has(spinCarName(car))) owned++;
+  }));
+  const query = (document.getElementById("spinSearch")?.value || "").trim();
+  // Counting the rows actually in the DOM is both exact and cheaper than
+  // re-running the whole filter pipeline just to learn how many survived it.
+  const visible = document.querySelectorAll("#spinGroups .spin-car").length;
+  document.getElementById("spinCount").textContent = query || wheelspinCollectionFilter !== "all"
+    ? `${visible} of ${total} cars | ${owned} collected`
+    : `${total} cars | ${owned} collected`;
 }
 
 // Single source of truth for "which Spins & Unlocks cars currently match the
@@ -2559,6 +3317,9 @@ async function importSetupFile(){
     const importedCars = normalizeSharedSetup(payload);
     const importedOwnedWheelspin = normalizeOwnedWheelspin(payload.ownedWheelspin);
 
+    // The pending Undo refers to a car in the garage being replaced -- it no
+    // longer makes sense once a different set of cars is loaded.
+    hideUndoToast();
     leaveCarEditMode(false);
     cars = importedCars;
     filterRace = "";
@@ -2616,16 +3377,18 @@ function normalizeSharedSetup(payload){
   if(!payload || typeof payload !== "object") throw new Error("invalid setup");
 
   const rawCars = payload.version === 1 && Array.isArray(payload.cars) ? payload.cars : null;
-  if(!rawCars || rawCars.length > 5000) throw new Error("invalid setup");
+  // A zero-car payload used to be accepted and would silently wipe the whole
+  // garage -- indistinguishable, from the outside, from a successful import.
+  // A backup with no cars in it is not something anyone means to restore.
+  if(!rawCars || !rawCars.length || rawCars.length > 5000) throw new Error("invalid setup");
 
-  const idBase = Date.now();
-  return rawCars.map((car, index)=>{
+  return rawCars.map((car)=>{
     if(!car || typeof car !== "object") throw new Error("invalid setup");
     if(typeof car.name !== "string" || !car.name.trim() || car.name.length > 500) throw new Error("invalid setup");
     if(!CLASS_ORDER.includes(car.cls) || !RACE_ORDER.includes(car.race)) throw new Error("invalid setup");
     if(typeof car.note !== "string" || car.note.length > 2000) throw new Error("invalid setup");
     return {
-      id:idBase + index,
+      id:mintCarId(),
       name:car.name.trim(),
       cls:car.cls,
       race:car.race,
@@ -2684,7 +3447,10 @@ function enhanceSelect(select){
   select.parentNode.insertBefore(wrapper, select);
   wrapper.appendChild(select);
   select.tabIndex = -1;
-  select.hidden = true;
+  // setAttribute, not the .hidden property -- same reason applyLogoStyle()
+  // documents above: the property's reflection onto the attribute has proven
+  // unreliable in the wild, so the attribute is always set directly.
+  select.setAttribute("hidden", "");
   select.setAttribute("aria-hidden", "true");
 
   const trigger = document.createElement("button");
@@ -3072,7 +3838,11 @@ function updateClassFromName(){
   const name = rawName.toLowerCase();
   const query = normalizeCarSearch(rawName);
   const classSelect = document.getElementById("newClass");
-  const meta = carMetaByName.get(name) || fh6CarData.find(car => carSearchScore(car, query) === 0);
+  // Exact (normalized) match only. The old fallback accepted any car whose
+  // search score was 0, which is a PREFIX match, not an exact one -- so typing
+  // a partial name silently stamped the class of whichever car happened to
+  // sort first behind that prefix, with no indication it was a guess.
+  const meta = carMetaByName.get(name) || (query ? fh6CarData.find(car => carSearchMeta(car).name === query) : null);
   if(meta?.rating && CLASS_ORDER.includes(meta.rating)){
     classSelect.value = meta.rating;
     syncCustomSelect(classSelect);
@@ -3106,9 +3876,14 @@ function renderGauge(){
   const len = 251.3;
   const offset = len * (1-pct);
   const fill = document.getElementById("gaugeFill");
+  const pointer = document.getElementById("gaugePointer");
   cancelAnimationFrame(gaugeRenderFrame);
   gaugeRenderFrame = requestAnimationFrame(()=>{
     fill.style.strokeDashoffset = offset;
+    // 0% parks the pointer at the left end of the track, 100% at the right --
+    // the arc is a half circle, so the sweep is exactly 180 degrees.
+    if(pointer) pointer.style.transform =
+      `translate(100px,100px) rotate(${pct * 180}deg) translate(-100px,-100px)`;
     gaugeRenderFrame = 0;
   });
   document.getElementById("gaugePct").textContent = Math.round(pct*100) + "%";
@@ -3253,9 +4028,11 @@ function renderList(){
 
   if(list.length===0){
     const empty = document.createElement("div"); empty.className="empty";
+    // A visual anchor so the state reads as a designed screen rather than a
+    // sentence adrift in a large empty panel.
     empty.innerHTML = cars.length===0
-      ? "<b>Your garage is empty</b>Add your first car above to start tracking coverage."
-      : "<b>No cars match this filter</b>Clear a filter above to see more.";
+      ? `<svg class="empty-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16 L3 8 L7 8 L9 5 L15 5 L17 8 L21 8 L21 16 Z"/><circle cx="7.5" cy="16" r="2"/><circle cx="16.5" cy="16" r="2"/></svg><b>Your garage is empty</b>Add your first car above to start tracking coverage.`
+      : `<svg class="empty-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><b>No cars match this filter</b>Clear a filter above to see more.`;
     wrap.appendChild(empty);
     return;
   }
@@ -3267,9 +4044,15 @@ function renderList(){
   const fragment = document.createDocumentFragment();
   list.forEach(c=>{
     const row = document.createElement("div"); row.className="row" + (c.disliked ? " disliked" : "");
+    row.dataset.id = c.id;
     row.style.setProperty("--row-accent", RACE_COLOR[c.race] || "transparent");
     if(c.id === editingCarId) row.classList.add("editing");
     const name = document.createElement("div"); name.className="name";
+    // Full stored name as a hover tooltip. The name is split across a year
+    // span, a truncating model span and an edition badge, and a long one
+    // ellipsis-clips at the column edge (~9 of the 623 wiki names do). This is
+    // the only way to read the clipped tail without opening the edit form.
+    name.title = c.name;
     const {year, rest} = splitCarNameYear(c.name);
     // Same edition detection the Spins & Unlocks tab already uses: strip a
     // trailing "Forza Edition" / "Welcome Pack" off the display text and
@@ -3293,10 +4076,21 @@ function renderList(){
       editionSpan.title = isForzaEdition ? "Forza Edition" : "Welcome Pack";
       name.appendChild(editionSpan);
     }
-    const clsB = document.createElement("span"); clsB.className="badge"; clsB.textContent=c.cls;
-    clsB.style.backgroundColor=CLASS_COLOR[c.cls]; clsB.style.color="#04140C";
-    const raceB = document.createElement("span"); raceB.className="badge"; raceB.textContent=c.race;
-    raceB.style.backgroundColor=RACE_COLOR[c.race]; raceB.style.color="#fff";
+    // Class stays a filled chip -- it's one or two characters, and the solid
+    // block is what makes it scannable down the column. Race becomes an
+    // outline chip: it repeats verbatim for every consecutive row of the same
+    // race (the default sort groups by race, so five identical saturated
+    // pills in a row was the norm), and at full fill it was out-shouting the
+    // car name, which is the actual content of the row. The race colour is
+    // still carried at full strength by the row's left accent bar.
+    const clsColor = CLASS_COLOR[c.cls] || "#2A2D38";
+    const clsB = document.createElement("span"); clsB.className="badge badge-class"; clsB.textContent=c.cls;
+    clsB.style.backgroundColor = clsColor;
+    const raceColor = RACE_COLOR[c.race] || "#5A5F70";
+    const raceB = document.createElement("span"); raceB.className="badge badge-race"; raceB.textContent=c.race;
+    raceB.style.color = readableOnPanel(raceColor);
+    raceB.style.backgroundColor = hexToRgba(raceColor, .12);
+    raceB.style.borderColor = hexToRgba(raceColor, .42);
     const note = document.createElement("div"); note.className="note"; note.textContent=c.note||"";
     const actions = document.createElement("div"); actions.className="row-actions";
     const flag = document.createElement("button"); flag.className="flagbtn" + (c.disliked ? " active" : "");
@@ -3304,24 +4098,15 @@ function renderList(){
     flag.setAttribute("aria-pressed", String(Boolean(c.disliked)));
     flag.setAttribute("aria-label", (c.disliked ? "Unmark " : "Mark ") + c.name + " as set aside");
     flag.title = "Mark";
-    flag.onclick = ()=>{
-      c.disliked = !c.disliked;
-      save();
-      renderAll();
-    };
+    flag.dataset.action = "flag";
     const edit = document.createElement("button"); edit.className="editbtn"; edit.appendChild(iconNode(PENCIL_ICON));
     edit.setAttribute("aria-label", "Edit " + c.name);
     edit.title = "Edit";
-    edit.onclick = ()=>startCarEdit(c.id);
+    edit.dataset.action = "edit";
     const del = document.createElement("button"); del.className="delbtn"; del.appendChild(iconNode(X_ICON));
     del.setAttribute("aria-label", "Delete " + c.name);
     del.title = "Delete";
-    del.onclick = ()=>{
-      cars = cars.filter(x=>x.id!==c.id);
-      if(editingCarId === c.id) leaveCarEditMode(false);
-      save();
-      renderAll();
-    };
+    del.dataset.action = "delete";
     actions.appendChild(flag);
     actions.appendChild(edit);
     actions.appendChild(del);
@@ -3338,7 +4123,8 @@ function renderGrid(){
   const corner = document.createElement("th"); corner.className="corner"; corner.textContent="Race \\ Class";
   head.appendChild(corner);
   CLASS_ORDER.forEach(c=>{
-    const th = document.createElement("th"); th.textContent=c; th.style.background=CLASS_COLOR[c];
+    const th = document.createElement("th"); th.textContent=c;
+    th.style.background=CLASS_COLOR[c];
     head.appendChild(th);
   });
   table.appendChild(head);
@@ -3360,7 +4146,8 @@ function renderGrid(){
 
   RACE_ORDER.forEach(r=>{
     const tr = document.createElement("tr");
-    const rh = document.createElement("td"); rh.className="racehead"; rh.textContent=r; rh.style.background=RACE_COLOR[r];
+    const rh = document.createElement("td"); rh.className="racehead"; rh.textContent=r;
+    rh.style.background=RACE_COLOR[r];
     tr.appendChild(rh);
     CLASS_ORDER.forEach(c=>{
       const matches = carsByRaceClass.get(r + "|" + c) || [];
@@ -3434,11 +4221,27 @@ function spinCarPerks(car){
   return Array.isArray(car?.perks) ? car.perks : ["super"];
 }
 
-function spinCarSearchText(car){
+// Built once per car and reused. SPIN_UNLOCK_CARS never changes at runtime,
+// so this string is immutable -- but it was being rebuilt (array spread, perk
+// label lookups, join, toLowerCase) for all 142 cars on every single search
+// keystroke and every filter click. Same reasoning as carSearchMeta above.
+const spinSearchTextCache = new WeakMap();
+function buildSpinCarSearchText(car){
   return [
     spinCarName(car),
     ...spinCarPerks(car).map(perk => SPIN_PERK_META[perk]?.label || perk)
   ].join(" ").toLowerCase();
+}
+function spinCarSearchText(car){
+  // Plain-string entries are still supported (see spinCarName) but can't key
+  // a WeakMap, so they just take the uncached path.
+  if(!car || typeof car !== "object") return buildSpinCarSearchText(car);
+  let text = spinSearchTextCache.get(car);
+  if(text === undefined){
+    text = buildSpinCarSearchText(car);
+    spinSearchTextCache.set(car, text);
+  }
+  return text;
 }
 
 function superWheelspinBrandName(car){
@@ -3602,7 +4405,6 @@ function renderSuperWheelspinCars(){
     heading.className = "spin-group-head";
     heading.setAttribute("aria-expanded", String(!isCollapsed));
     heading.setAttribute("aria-label", `${isCollapsed ? "Expand" : "Collapse"} ${group.title}`);
-    heading.onclick = ()=>toggleSpinBrandCollapsed(group.title);
 
     const headingMain = document.createElement("span");
     headingMain.className = "spin-group-heading-main";
@@ -3646,6 +4448,7 @@ function renderSuperWheelspinCars(){
         .replace(/\s+Welcome Pack$/i, "");
       const item = document.createElement("li");
       item.className = "spin-car";
+      item.dataset.car = car;
       const isOwned = ownedWheelspinCars.has(car);
       if(isOwned) item.classList.add("owned");
       const yearLabel = document.createElement("span");
@@ -3692,7 +4495,6 @@ function renderSuperWheelspinCars(){
       check.setAttribute("aria-pressed", String(isOwned));
       check.setAttribute("aria-label", (isOwned ? "Mark as not collected: " : "Mark as collected: ") + car);
       check.title = isOwned ? "Collected" : "Mark as collected";
-      check.onclick = ()=>toggleOwnedWheelspinCar(car);
       tail.appendChild(check);
 
       item.appendChild(yearLabel);
@@ -3712,6 +4514,43 @@ function renderSuperWheelspinCars(){
 }
 
 let lastModalFocus = null;
+
+// Both overlays are aria-modal dialogs, but nothing was stopping Tab from
+// walking straight out of one and into the page behind it -- which for a
+// screen reader or keyboard user means "the dialog is modal" is a claim the
+// page doesn't actually honour. One document-level handler covers both, and
+// any future overlay, since it resolves the open dialog at keypress time.
+const FOCUSABLE_IN_MODAL =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function openOverlayElement(){
+  return document.querySelector(".overlay.show");
+}
+
+document.addEventListener("keydown", event=>{
+  if(event.key !== "Tab") return;
+  const overlay = openOverlayElement();
+  if(!overlay) return;
+  const focusable = [...overlay.querySelectorAll(FOCUSABLE_IN_MODAL)]
+    .filter(node => node.offsetParent !== null);
+  if(!focusable.length) return;
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  // Focus sitting outside the dialog entirely (e.g. it was moved by something
+  // else while the dialog was open) is pulled back in rather than left loose.
+  if(!overlay.contains(document.activeElement)){
+    event.preventDefault();
+    first.focus();
+    return;
+  }
+  if(event.shiftKey && document.activeElement === first){
+    event.preventDefault();
+    last.focus();
+  }else if(!event.shiftKey && document.activeElement === last){
+    event.preventDefault();
+    first.focus();
+  }
+});
+
 function showOverlay(overlayId, focusId){
   const overlay = document.getElementById(overlayId);
   lastModalFocus = document.activeElement;
@@ -3745,17 +4584,48 @@ function openModal(race, cls, matches){
   showOverlay("overlay", "modalClose");
 }
 
+// The gauge reports on the garage's race/class coverage, so it is shown on
+// exactly the two tabs that are about that data. To put it back on every tab,
+// make this return true unconditionally -- nothing else needs to change.
+const TABS_WITH_GAUGE = new Set(["garage", "coverage"]);
+function syncGaugeVisibility(tab){
+  const slot = document.getElementById("gaugeSlot");
+  if(!slot) return;
+  const show = TABS_WITH_GAUGE.has(tab);
+  slot.classList.toggle("is-collapsed", !show);
+  slot.setAttribute("aria-hidden", String(!show));
+}
+
+// How long to wait for the gauge collapse/expand to finish before (or after)
+// running the panel swipe -- the gauge transition is .2s, plus a small buffer
+// so the two phases never visually overlap.
+const GAUGE_SEQ_MS = 230;
+
 function switchTabWithSlide(targetButton){
   hideCarSuggestions();
   closeCustomSelects();
   const targetTab = targetButton.dataset.tab;
   const currentTab = tabVisualState;
+  const targetHasGauge = TABS_WITH_GAUGE.has(targetTab);
+  // Read the gauge's ACTUAL rendered state, not currentTab -- a rapid second
+  // switch can land here while a previous transition is still animating and
+  // tabVisualState hasn't caught up; the class is the reliable source of truth.
+  const gaugeSlot = document.getElementById("gaugeSlot");
+  const gaugeIsCollapsed = gaugeSlot ? gaugeSlot.classList.contains("is-collapsed") : false;
+  // The gauge and the panel swipe never move at the same time. The gauge only
+  // animates while it is on its own tab's side of the transition:
+  //   leaving a gauge tab   -> collapse the gauge UP first, THEN swipe
+  //   arriving at a gauge tab-> swipe first, THEN drop the gauge down
+  //   no gauge-state change  -> just swipe
+  // so every switch is a single-axis motion rather than the diagonal
+  // collapse-while-sliding it used to be.
+  const needCollapse = !targetHasGauge && !gaugeIsCollapsed;
+  const needExpand = targetHasGauge && gaugeIsCollapsed;
   const currentPanel = document.getElementById(TAB_PANEL_IDS[currentTab]);
   const targetPanel = document.getElementById(TAB_PANEL_IDS[targetTab]);
   const movingRight = TAB_ORDER.indexOf(targetTab) > TAB_ORDER.indexOf(currentTab);
   const outClass = movingRight ? "panel-slide-out-left" : "panel-slide-out-right";
   const inClass = movingRight ? "panel-slide-in-right" : "panel-slide-in-left";
-  const tabs = document.querySelector(".tabs");
   const tabStage = document.querySelector(".tab-stage");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -3766,16 +4636,21 @@ function switchTabWithSlide(targetButton){
 
   window.clearTimeout(tabSwapTimer);
   window.clearTimeout(tabEndTimer);
+  window.clearTimeout(gaugeSeqTimer);
   TAB_ORDER.forEach(tabName => {
     const panel = document.getElementById(TAB_PANEL_IDS[tabName]);
     panel.classList.remove(...TAB_TRANSITION_CLASSES);
     panel.style.display = tabName === currentTab ? "" : "none";
   });
-  tabs.classList.remove("is-switching");
   document.querySelectorAll(".tab").forEach(tab => {
     const isActive = tab === targetButton;
     tab.classList.toggle("active", isActive);
     tab.setAttribute("aria-selected", String(isActive));
+    // Roving tabindex: a tablist is one stop in the page's tab order, and the
+    // arrow keys move between the tabs inside it (see the keydown handler
+    // where these are wired up). Without this every tab is its own stop,
+    // which is the one thing the ARIA tabs pattern exists to avoid.
+    tab.tabIndex = isActive ? 0 : -1;
   });
 
   if(targetTab === currentTab){
@@ -3784,6 +4659,9 @@ function switchTabWithSlide(targetButton){
   }
 
   if(reduceMotion){
+    // No slide phases to sync to, so just settle the gauge to its final
+    // state immediately (the transition is disabled under reduce-motion).
+    syncGaugeVisibility(targetTab);
     currentPanel.style.display = "none";
     targetPanel.style.display = "";
     tabVisualState = targetTab;
@@ -3791,23 +4669,38 @@ function switchTabWithSlide(targetButton){
     return;
   }
 
-  tabs.classList.add("is-switching");
-  currentPanel.classList.add(outClass);
-  tabSwapTimer = window.setTimeout(()=>{
-    currentPanel.style.display = "none";
-    currentPanel.classList.remove(outClass);
-    targetPanel.style.display = "";
-    targetPanel.classList.add(inClass);
-    if(targetTab === "spins") updateSpinLegendAnchor();
-    tabVisualState = targetTab;
-  }, 220);
-  tabEndTimer = window.setTimeout(()=>{
-    targetPanel.classList.remove(inClass);
-    tabs.classList.remove("is-switching");
-    tabSwapTimer = 0;
-    tabEndTimer = 0;
-    if(tabVisualState === "spins") tabStage.classList.add("spins-settled");
-  }, 600);
+  // The panel swipe, factored out so it can run immediately (arriving/no
+  // change) or after the gauge has collapsed (leaving). onDone fires once the
+  // swipe has fully settled -- used to drop the gauge in afterwards.
+  function runSwipe(onDone){
+    currentPanel.classList.add(outClass);
+    tabSwapTimer = window.setTimeout(()=>{
+      currentPanel.style.display = "none";
+      currentPanel.classList.remove(outClass);
+      targetPanel.style.display = "";
+      targetPanel.classList.add(inClass);
+      if(targetTab === "spins") updateSpinLegendAnchor();
+      tabVisualState = targetTab;
+    }, 220);
+    tabEndTimer = window.setTimeout(()=>{
+      targetPanel.classList.remove(inClass);
+      tabSwapTimer = 0;
+      tabEndTimer = 0;
+      if(tabVisualState === "spins") tabStage.classList.add("spins-settled");
+      if(onDone) onDone();
+    }, 600);
+  }
+
+  if(needCollapse){
+    // Close the gauge UP, then swipe once it's out of the way.
+    syncGaugeVisibility(targetTab);
+    gaugeSeqTimer = window.setTimeout(()=>{ gaugeSeqTimer = 0; runSwipe(); }, GAUGE_SEQ_MS);
+  }else if(needExpand){
+    // Swipe first, then drop the gauge down onto the settled layout.
+    runSwipe(()=>syncGaugeVisibility(targetTab));
+  }else{
+    runSwipe();
+  }
 }
 
 document.getElementById("modalClose").onclick = ()=>hideOverlay("overlay");
@@ -3825,6 +4718,117 @@ document.querySelectorAll(".tab").forEach(t=>{
   t.onclick = ()=> switchTabWithSlide(t);
 });
 
+function syncTabScrollHint(){
+  const tabs = document.querySelector(".tabs");
+  if(!tabs) return;
+  const remaining = tabs.scrollWidth - tabs.clientWidth - tabs.scrollLeft;
+  tabs.classList.toggle("has-overflow", remaining > 2);
+}
+document.querySelector(".tabs").addEventListener("scroll", syncTabScrollHint, {passive:true});
+window.addEventListener("resize", syncTabScrollHint);
+syncTabScrollHint();
+
+// Arrow-key navigation across the tab strip, per the ARIA tabs pattern.
+// Activation follows focus (moving to a tab selects it), which is the
+// expected behaviour for cheap, instant panel swaps like these.
+document.querySelector(".tab-controls").addEventListener("keydown", event=>{
+  const tabs = [...document.querySelectorAll(".tab")];
+  const current = tabs.indexOf(document.activeElement);
+  if(current < 0) return;
+  let next = -1;
+  if(event.key === "ArrowRight") next = (current + 1) % tabs.length;
+  else if(event.key === "ArrowLeft") next = (current - 1 + tabs.length) % tabs.length;
+  else if(event.key === "Home") next = 0;
+  else if(event.key === "End") next = tabs.length - 1;
+  if(next < 0) return;
+  event.preventDefault();
+  tabs[next].focus();
+  switchTabWithSlide(tabs[next]);
+});
+
+// Holds the last deleted car plus the array index it was removed from, so
+// Undo can splice it back exactly where it was. Only the most recent delete
+// is recoverable -- a second delete finalises the first (it is already saved
+// and gone from `cars`), which is the standard single-level undo-toast model.
+let pendingUndo = null;
+let undoToastTimer = 0;
+
+function showUndoToast(car, index){
+  pendingUndo = {car, index};
+  const toast = document.getElementById("undoToast");
+  const msg = document.getElementById("undoToastMsg");
+  // Built from text + a <b> node (never innerHTML with the name) so a car
+  // name can't inject markup. The name ellipsis-clips via the message's own
+  // overflow, same as everywhere else it's shown.
+  const strong = document.createElement("b");
+  strong.textContent = car.name;
+  msg.replaceChildren("Removed ", strong);
+  // hidden is cleared once and left off -- when not showing, the toast rests
+  // at opacity:0 / pointer-events:none, so there is no hide/show race to
+  // manage and the aria-live region still announces the removal.
+  toast.hidden = false;
+  void toast.offsetWidth;
+  toast.classList.add("show");
+  clearTimeout(undoToastTimer);
+  // 6s, not the status pill's 2.6s -- undo needs time to notice and react.
+  undoToastTimer = setTimeout(hideUndoToast, 6000);
+}
+
+function hideUndoToast(){
+  clearTimeout(undoToastTimer);
+  document.getElementById("undoToast").classList.remove("show");
+  pendingUndo = null;
+}
+
+function undoDelete(){
+  if(!pendingUndo) return;
+  const {car, index} = pendingUndo;
+  const at = Math.min(Math.max(index, 0), cars.length);
+  cars.splice(at, 0, car);
+  save();
+  hideUndoToast();
+  renderAll();
+  setShareStatus("Restored.", "success");
+}
+
+document.getElementById("undoBtn").onclick = undoDelete;
+
+// Same delegation as the Spins list: one listener on the container rather
+// than three closures per car row, re-created on every single re-render.
+document.getElementById("carList").addEventListener("click", event=>{
+  const button = event.target.closest("[data-action]");
+  if(!button) return;
+  const row = button.closest(".row");
+  if(!row) return;
+  const id = Number(row.dataset.id);
+  const car = cars.find(item => item.id === id);
+  if(!car) return;
+  if(button.dataset.action === "edit"){
+    startCarEdit(id);
+    return;
+  }
+  if(button.dataset.action === "flag"){
+    car.disliked = !car.disliked;
+    save();
+    // renderChips() is deliberately not called: the filter chips reflect the
+    // race/class filters, which a set-aside toggle cannot change.
+    renderGauge();
+    renderList();
+    renderGrid();
+    return;
+  }
+  if(button.dataset.action === "delete"){
+    // Capture the index before removing so Undo can restore the exact order.
+    const index = cars.findIndex(item => item.id === id);
+    const removed = index >= 0 ? cars[index] : car;
+    cars = cars.filter(item => item.id !== id);
+    if(editingCarId === id) leaveCarEditMode(false);
+    save();
+    renderAll();
+    showUndoToast(removed, index);
+  }
+});
+
 document.getElementById("fRace").onchange = (e)=>{ filterRace = e.target.value; renderList(); renderChips(); };
 document.getElementById("fClass").onchange = (e)=>{ filterClass = e.target.value; renderList(); renderChips(); };
 document.getElementById("fSort").onchange = (e)=>{ carSort = e.target.value; renderList(); };
@@ -3835,6 +4839,24 @@ document.querySelectorAll("[data-spin-filter]").forEach(button => {
     renderSuperWheelspinCars();
   });
 });
+// One delegated listener for the whole Spins & Unlocks list instead of two
+// closures per rendered row (142 of them on a full render, re-created every
+// time the list rebuilt). The container outlives every render, so this is
+// bound once at startup and never re-attached.
+document.getElementById("spinGroups").addEventListener("click", event=>{
+  const check = event.target.closest(".spin-check");
+  if(check){
+    const row = check.closest(".spin-car");
+    if(row) toggleOwnedWheelspinCar(row.dataset.car);
+    return;
+  }
+  const heading = event.target.closest(".spin-group-head");
+  if(heading){
+    const section = heading.closest(".spin-group");
+    if(section) toggleSpinBrandCollapsed(section.dataset.brand);
+  }
+});
+
 document.getElementById("spinCheckAll").onclick = checkAllVisibleWheelspinCars;
 document.getElementById("spinUncheckAll").onclick = uncheckAllVisibleWheelspinCars;
 document.getElementById("spinExpandAll").onclick = ()=>setAllSpinBrandsCollapsed(false);
@@ -3867,7 +4889,6 @@ function startEngine(){
   if(engineOn || engineBusy) return;
   engineBusy = true;
   const cluster = document.querySelector(".dash-cluster");
-  const gaugeWrap = document.getElementById("overallGauge");
   const ignitionBtn = document.getElementById("ignitionBtn");
   const needleRpm = document.querySelector(".needle-rpm");
   const needleFuel = document.querySelector(".needle-fuel");
@@ -3882,7 +4903,10 @@ function startEngine(){
 
   ignitionBtn.disabled = true;
   setIgnitionPressed(true);
-  cluster.classList.add("engine-cranking", "bulb-check");
+  // The bulb-check phase has no class of its own -- it IS the window during
+  // which every .tell carries .is-lit (see below). An earlier "bulb-check"
+  // class was added and removed here but no stylesheet rule ever matched it.
+  cluster.classList.add("engine-cranking");
   needleRpm.classList.add("sweep", "needle-lit");
   needleFuel.classList.add("sweep", "needle-lit");
 
@@ -3892,7 +4916,6 @@ function startEngine(){
 
   setTimeout(()=> cluster.classList.remove("engine-cranking"), 420);
   setTimeout(()=>{
-    cluster.classList.remove("bulb-check");
     // Once the check completes, only the lamps reporting a real condition stay
     // lit -- seatbelt (unbuckled) and handbrake (engaged) are both genuinely
     // true for a car that's just been started and is still sitting in park.
@@ -3905,7 +4928,6 @@ function startEngine(){
     needleRpm.classList.remove("sweep");
     needleFuel.classList.remove("sweep");
     cluster.classList.add("engine-running");
-    gaugeWrap.classList.add("engine-running");
     ignitionBtn.disabled = false;
     engineOn = true;
     engineBusy = false;
@@ -3927,7 +4949,6 @@ function readCurrentRotationDeg(el){
 function stopEngine(){
   engineBusy = true;
   const cluster = document.querySelector(".dash-cluster");
-  const gaugeWrap = document.getElementById("overallGauge");
   const ignitionBtn = document.getElementById("ignitionBtn");
   const needleRpm = document.querySelector(".needle-rpm");
   const needleFuel = document.querySelector(".needle-fuel");
@@ -3950,8 +4971,7 @@ function stopEngine(){
   needleFuel.style.transform = `translate(50px,50px) rotate(${fuelAngle}deg) translate(-50px,-50px)`;
   void needleRpm.offsetWidth; // force layout so the frozen angle above is committed first
 
-  cluster.classList.remove("engine-running", "bulb-check");
-  gaugeWrap.classList.remove("engine-running");
+  cluster.classList.remove("engine-running");
   needleRpm.classList.remove("needle-lit");
   needleFuel.classList.remove("needle-lit");
   ["tellBelt","tellBrake","tellOil","tellTemp","tellBatt"].forEach(id=>{
@@ -4037,7 +5057,7 @@ document.getElementById("addBtn").onclick = ()=>{
     cars[index] = {...cars[index], name, cls, race, note};
     leaveCarEditMode(false);
   }else{
-    cars.push({id:Date.now(), name, cls, race, note});
+    cars.push({id:mintCarId(), name, cls, race, note, disliked:false});
     document.getElementById("newName").value="";
     document.getElementById("newNote").value="";
     hideCarSuggestions();
@@ -4056,6 +5076,9 @@ document.getElementById("setupFileInput").addEventListener("change", event=>{
 
 document.getElementById("resetBtn").onclick = ()=>{
   if(!confirm("Clear all cars? This can't be undone.")) return;
+  // A single-car Undo toast can't survive a wholesale wipe -- restoring one
+  // row into a just-cleared garage would be nonsense.
+  hideUndoToast();
   leaveCarEditMode(false);
   cars = [];
   save(); renderAll();
@@ -4081,6 +5104,10 @@ renderDirtRoutes();
 renderSpinLegend();
 renderSuperWheelspinCars();
 initSpinLegendAnchor();
+// Garage is the tab that opens, so this is a no-op on first paint -- it's
+// here so the gauge's shown/hidden state is derived from one place rather
+// than depending on the markup's initial classes staying in sync by hand.
+syncGaugeVisibility("garage");
 
 load();
 fillCarSuggestions();
@@ -4176,8 +5203,10 @@ document.querySelectorAll("#devSeasonPanel button[data-dev-season]").forEach(btn
     const forcedSeason = btn.dataset.devSeason;
     const realGetLiveSeason = getLiveSeason;
     getLiveSeason = () => forcedSeason;
-    triggerSakuraBurst();
-    setTimeout(() => { getLiveSeason = realGetLiveSeason; }, 5000);
+    // Restored the moment the burst itself ends, not on a fixed 5s timer that
+    // outlived the 4.4s burst -- that left a ~600ms window where the logo
+    // easter egg would have played the forced season instead of the real one.
+    triggerSakuraBurst(() => { getLiveSeason = realGetLiveSeason; });
   };
 });
 </script>
