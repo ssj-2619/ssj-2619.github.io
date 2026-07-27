@@ -6,6 +6,18 @@
 <title>motorpool — A car tracker for Forza Horizon 6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- The weights fetched here are the ONLY weights the CSS below may ask for.
+     Rajdhani 500/600/700, Inter 400/500, JetBrains Mono 500/600.
+     Asking for anything else doesn't fail loudly -- the browser silently
+     font-matches to the nearest weight it does have, so the stylesheet ends up
+     describing type that is never drawn. Several rules had drifted that way:
+     eight JetBrains Mono rules asked for 400 (drawn at 500), two asked for 700
+     (drawn at 600), and one Inter rule asked for 600 (drawn at 500). They now
+     state the weight that actually renders. It matters beyond tidiness because
+     this file is routinely opened straight off disk: with no network the
+     fallback monospace/system-ui DOES honour 400 vs 700, so a lying weight is
+     the difference between the offline render matching the online one and not.
+     Adding a weight to a rule means adding it to this URL in the same edit. -->
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -34,10 +46,17 @@
     --garage-cols: minmax(0,2.4fr) 64px 144px minmax(0,1fr) 82px;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
+  /* 20px of tail, not 64. The generous version was breathing room for the
+     garage list, which is long enough to scroll anyway -- but every tab pays
+     it, and on a short one it was most of the reason Coverage scrolled 79px
+     to reach nothing but empty padding. Coverage's real content now ends
+     ~880px in, so it fits a 900px-tall viewport outright; below that it
+     scrolls because the content genuinely is that tall, not because of
+     padding. */
   body{
     background-color:var(--ink);
     color:var(--hi); font-family:'Inter',system-ui,sans-serif;
-    -webkit-font-smoothing:antialiased; line-height:1.5; padding:36px 16px 64px;
+    -webkit-font-smoothing:antialiased; line-height:1.5; padding:36px 16px 20px;
   }
   /* The diagonal weave + top glow used to live on <body> with
      background-attachment:fixed. That combination is one of the more
@@ -100,7 +119,7 @@
   .wordmark-row .build-tag{margin-left:-6px;}
   .brand h1{font-size:26px; color:var(--hi);}
   .brand h1 .wordmark-light{font-weight:500;}
-  .sub{font-size:12px; color:var(--lo); font-family:'JetBrains Mono',monospace; letter-spacing:.03em;}
+  .sub{font-size:12px; font-weight:500; color:var(--lo); font-family:'JetBrains Mono',monospace; letter-spacing:.03em;}
   /* Indented to start under the wordmark text, not the icon -- lining this
      up flush with the icon's own edge instead made both lines start at the
      exact same x position, which read as too mechanically symmetric for a
@@ -254,7 +273,7 @@
   }
   .dial-label{
     position:absolute; top:76%; left:50%; transform:translateX(-50%);
-    display:block; font-family:'JetBrains Mono',monospace; font-size:9px;
+    display:block; font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:500;
     letter-spacing:.12em; color:#5C5F6B; white-space:nowrap;
   }
 
@@ -337,7 +356,7 @@
     transition:opacity .3s ease, background .3s ease, box-shadow .3s ease;
   }
   .tell-icon{width:13px; height:13px; color:#5C5F6B; flex:none; transition:color .3s ease, filter .3s ease;}
-  .tell-label{font-family:'JetBrains Mono',monospace; font-size:8.5px; letter-spacing:.1em; color:#5C5F6B; transition:color .3s ease;}
+  .tell-label{font-family:'JetBrains Mono',monospace; font-size:8.5px; font-weight:500; letter-spacing:.1em; color:#5C5F6B; transition:color .3s ease;}
 
   /* .is-lit is toggled directly by JS -- not tied to any ancestor "engine running"
      state -- so it doesn't matter which element in the markup a .tell lives under.
@@ -557,7 +576,7 @@
   .suggestion-class{
     flex:none; width:24px; height:24px; border-radius:4px;
     display:inline-flex; align-items:center; justify-content:center;
-    font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; color:#fff;
+    font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; color:#fff;
     text-shadow:0 0 2px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.65), 0 1px 1px rgba(0,0,0,.5);
   }
   .clear-name{
@@ -660,13 +679,24 @@
     position:absolute; width:1px; height:1px; overflow:hidden;
     clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap;
   }
-  .share-status-row{height:27px; text-align:right; margin:-4px 0 12px;}
+  /* Zero-height anchor. This strip used to reserve 27px plus margins -- 39px
+     of permanent layout -- so the export/import status could appear without
+     shifting anything. But that message shows for a couple of seconds after a
+     backup and never otherwise, so every tab was carrying an empty band the
+     whole time; on Coverage it was a third of the reason the page scrolled to
+     reach nothing. The status is now an overlay pinned to this point, so it
+     still appears exactly where it always did, and costs no height when
+     absent. It's a transient, right-aligned chip over its own panel's top
+     corner, so there is nothing for it to obscure for long. */
+  .share-status-row{position:relative; height:0; margin:0; text-align:right;}
   .share-status{
+    position:absolute; right:0; top:2px; z-index:60;
     display:inline-flex; align-items:center; justify-content:center;
     height:27px; padding:0 8px; box-sizing:border-box;
     background:var(--panel2); border:0.5px solid var(--line); border-radius:7px;
     font-size:11.5px; white-space:nowrap; color:var(--lo);
     opacity:0; transform:translateY(-3px); pointer-events:none;
+    box-shadow:0 6px 16px rgba(0,0,0,.45);
     transition:opacity .2s ease, transform .2s ease;
   }
   .share-status.show{opacity:1; transform:translateY(0);}
@@ -687,11 +717,20 @@
   }
   .undo-toast.show{opacity:1; transform:translate(-50%, 0); pointer-events:auto;}
   .undo-toast[hidden]{display:none;}
+  /* The resting (not .show) state is opacity:0 + pointer-events:none, which
+     hides the toast from the eye and the mouse but NOT from the keyboard --
+     opacity doesn't remove anything from the tab order. Since `hidden` is
+     cleared on the first delete and deliberately left off from then on (see
+     showUndoToast), the Undo button otherwise stayed a permanent invisible
+     tab stop for the rest of the session: Tab would land on a control that
+     isn't on screen and whose handler no longer has anything to undo.
+     `inert` is toggled alongside .show in JS -- see setUndoToastShown(). */
+  .undo-toast[inert]{pointer-events:none;}
   .undo-toast-msg{
     min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     font-size:13px; color:var(--hi);
   }
-  .undo-toast-msg b{font-weight:600;}
+  .undo-toast-msg b{font-weight:500;}
   .undo-toast-btn{
     flex:none; background:rgba(45,226,214,.14); border:0.5px solid rgba(45,226,214,.4);
     color:var(--cyan); border-radius:7px; padding:6px 14px; cursor:pointer;
@@ -763,7 +802,12 @@
      text at the same weight as everything else. Sitting it a step further
      back sets the order the row should be read in: name, then class/race,
      then whatever the owner scribbled about it. */
-  .row .note{font-size:12.5px; color:#6E717A; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  /* #767A84 rather than the previous #6E717A: the same deliberate step back
+     from --lo described above (still visibly the quietest column in the row),
+     but 4.53:1 instead of 4.05:1 -- over the line for 12.5px body text rather
+     than just under it. The hierarchy this comment is about is unchanged; only
+     the amount of grey needed to express it. */
+  .row .note{font-size:12.5px; color:#767A84; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   /* Flat, white-on-colour, matching FH6's own class badges. This previously
      carried a top highlight gradient, an inset bottom shade and a drop
      shadow -- three separate cues that all say "raised button", which is not
@@ -901,12 +945,14 @@
      loses the one label that says which race each row even is. Harmless
      at widths where the table never actually scrolls: a non-scrolled
      sticky cell sits exactly where it would anyway. */
-  table.cov th.corner, table.cov td.racehead{width:150px; position:sticky; left:0; z-index:1;}
+  /* .racehead is a <th scope="row"> (not a <td>) so the grid announces which
+     race row a cell belongs to -- these selectors moved with it. */
+  table.cov th.corner, table.cov th.racehead{width:150px; position:sticky; left:0; z-index:1;}
   /* Same white-on-colour treatment as the garage badges, so a class or race
      chip reads identically wherever it appears. The halo matters more here
      than anywhere else: these headers sit on the full-strength palette,
      which includes Touge's very light cyan. */
-  table.cov th, table.cov td.racehead{
+  table.cov th{
     color:#fff;
     text-shadow:0 0 2px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.65), 0 1px 1px rgba(0,0,0,.5);
   }
@@ -917,7 +963,10 @@
     background:var(--ink); color:var(--lo); font-size:10px; text-align:left; padding-left:6px;
     text-shadow:none;
   }
-  table.cov td.racehead{
+  /* Higher specificity than the plain `table.cov th` rule above (two classes
+     to its one), so the race labels keep Rajdhani rather than inheriting the
+     class headers' JetBrains Mono now that they are <th> too. */
+  table.cov th.racehead{
     font-family:'Rajdhani',sans-serif; font-weight:600; text-align:left; padding-left:10px;
     font-size:12.5px; white-space:nowrap;
   }
@@ -940,7 +989,7 @@
      "fix" it again on a future pass without an actual reason to revisit it. */
   .legend{
     display:flex; align-items:flex-start; justify-content:space-between; gap:16px;
-    margin-top:12px; font-size:11px; font-family:'JetBrains Mono',monospace;
+    margin-top:12px; font-size:11px; font-weight:500; font-family:'JetBrains Mono',monospace;
     letter-spacing:.02em; color:var(--lo);
   }
   .legend-keys{display:flex; flex-direction:column; gap:6px;}
@@ -1105,7 +1154,7 @@
     color:#77837E; text-decoration:line-through; text-decoration-thickness:1px;
   }
   .spin-group-count{
-    flex:none; font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.05em;
+    flex:none; font-family:'JetBrains Mono',monospace; font-size:9.5px; font-weight:500; letter-spacing:.05em;
     text-transform:uppercase; color:var(--lo);
   }
   .spin-group.is-collapsed .spin-group-head{
@@ -1159,7 +1208,7 @@
   .spin-perk{
     --perk-color:var(--cyan);
     min-width:20px; height:18px; flex:none; display:inline-flex; align-items:center; justify-content:center;
-    border-radius:5px; padding:0 5px; font-family:'JetBrains Mono',monospace; font-size:8.5px; font-weight:700;
+    border-radius:5px; padding:0 5px; font-family:'JetBrains Mono',monospace; font-size:8.5px; font-weight:600;
     letter-spacing:.02em; line-height:1; background:rgba(45,226,214,.12); color:var(--cyan);
     border:0.5px solid rgba(45,226,214,.28); box-shadow:none;
   }
@@ -1258,17 +1307,28 @@
 
   .foot{
     display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:24px;
-    font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.02em; color:#5D6069;
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:500; letter-spacing:.02em; color:#7B7F8A;
   }
   /* Left free to wrap; the action beside it is not. On a narrow screen
      "Clear all data" was breaking across two lines mid-phrase. */
+  /* Lifted from #5D6069 (3.15:1 on the page ink) to #7B7F8A (5.1:1), along
+     with the .foot text above it. It stayed at the old value through several
+     passes because it reads as fine print -- but "Clear all data" is not
+     fine print, it is the only control that wipes the garage, and it was the
+     least legible text on the page. Still clearly the quietest thing in the
+     layout, just no longer below the 4.5:1 floor for body-size text. */
   .foot button{
-    background:none; border:none; color:#5D6069; text-decoration:underline; cursor:pointer;
-    font-family:inherit; font-size:10.5px; flex:none; white-space:nowrap;
+    background:none; border:none; color:#7B7F8A; text-decoration:underline; cursor:pointer;
+    /* font-weight has to be inherited explicitly. `font-family:inherit` alone
+       leaves the UA stylesheet's own `font: 400 ...` shorthand supplying the
+       weight, so this button was the one element still asking for JetBrains
+       Mono 400 -- a weight the page never loads -- while the text beside it
+       used 500. Now the pair actually matches. */
+    font-family:inherit; font-weight:inherit; font-size:10.5px; flex:none; white-space:nowrap;
   }
   .foot button:hover{color:var(--magenta);}
   .build-tag{
-    margin-left:6px; font-family:'JetBrains Mono',monospace; font-size:9.5px;
+    margin-left:6px; font-family:'JetBrains Mono',monospace; font-size:9.5px; font-weight:500;
     letter-spacing:.04em; color:var(--cyan); opacity:.85; user-select:none;
     text-shadow:0 0 6px rgba(45,226,214,.5);
   }
@@ -1376,7 +1436,7 @@
         <!-- Versioning: major.minor bumps for scope (new tab/capability = +0.1,
              smaller info-panel-scale feature = +0.01), small tweaks/fixes append
              or increment a _N suffix on the current version (e.g. this build). -->
-        <span class="build-tag">v1.16_15</span>
+        <span class="build-tag">v1.16_19</span>
       </div>
       <div class="sub">A CAR TRACKER FOR FORZA HORIZON 6</div>
     </div>
@@ -1448,6 +1508,17 @@
                    so it never sweeps across the percentage readout at
                    mid-range. Rotation is composed by hand exactly like
                    .dial-needle above, for the same cross-browser reason. -->
+              <!-- Solid fill, no outline. A dark separating stroke was added
+                   here once on the theory that the arrowhead fused with the
+                   fill arc's leading round cap (they sit 2 user units apart at
+                   every value, and the glow below spans about that far). Held
+                   up side by side at 3x, that turned out to be an artifact of
+                   reading a downscaled screenshot, not something visible on the
+                   real 300px gauge: the tip stays clearly separate at 0%, 4%
+                   and 10% -- the values the claim rested on -- without any
+                   help. The stroke, meanwhile, ate into a shape only 9.5 units
+                   long and turned a solid pointer into a hollow ring. Don't
+                   re-add it without looking at the two magnified first. -->
               <g id="gaugePointer">
                 <polygon points="11,100 1.5,95 1.5,105" fill="#2DE2D6"/>
               </g>
@@ -1574,9 +1645,13 @@
 
     <div class="addrow">
       <div class="name-field">
-        <input id="newName" type="text" placeholder="Car name, e.g. Porsche 911" aria-label="Car name" autocomplete="off" spellcheck="false" aria-expanded="false" aria-controls="carSuggestions">
+        <!-- role=combobox + aria-autocomplete/activedescendant: the arrow keys
+             already moved a visible .active highlight through the list, but
+             without these a screen reader was never told the list existed,
+             which option was current, or that the field had a popup at all. -->
+        <input id="newName" type="text" placeholder="Car name, e.g. Porsche 911" aria-label="Car name" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" aria-controls="carSuggestions">
         <button class="clear-name" id="clearName" type="button" aria-label="Clear car name" hidden></button>
-        <div class="suggestions" id="carSuggestions" hidden></div>
+        <div class="suggestions" id="carSuggestions" role="listbox" aria-label="Car name suggestions" hidden></div>
       </div>
       <select id="newClass" aria-label="Class"></select>
       <select id="newRace" aria-label="Race type"></select>
@@ -1662,7 +1737,7 @@
         </div>
       </div>
       <div class="spin-actions-row">
-        <div class="spin-collapse-actions" role="group" aria-label="Expand or collapse all brand groups">
+        <div class="spin-collapse-actions" role="group" aria-label="Expand or collapse all visible brand groups">
           <button type="button" id="spinExpandAll">Expand all</button>
           <button type="button" id="spinCollapseAll">Collapse all</button>
         </div>
@@ -1712,7 +1787,7 @@
      next to edit -- an easy misfire. Rather than gate every delete behind a
      dialog, the delete happens immediately and this offers a few seconds to
      take it back, which is the lighter, less interrupting pattern. -->
-<div class="undo-toast" id="undoToast" role="status" aria-live="polite" hidden>
+<div class="undo-toast" id="undoToast" role="status" aria-live="polite" hidden inert>
   <span class="undo-toast-msg" id="undoToastMsg"></span>
   <button type="button" class="undo-toast-btn" id="undoBtn">Undo</button>
 </div>
@@ -1767,9 +1842,14 @@
     box-shadow:-8px 0 20px rgba(0,0,0,.4);
     pointer-events:none;
   }
-  /* Fully off-screen when closed (the drawer's own transform pushes the tray
-     entirely past the viewport edge), so this is only for keyboard/tab
-     navigation -- without it the hidden buttons would still be focusable. */
+  /* pointer-events:none stops the MOUSE reaching the tray while it's parked
+     off-screen -- it does nothing whatsoever about the keyboard, which this
+     rule used to claim it did. A focused <button> still fires its click
+     handler on Enter regardless of pointer-events, so all four season buttons
+     were tabbable and fully activatable while sitting outside the viewport:
+     Tab could set off a burst from a control nobody could see. `inert` (set
+     alongside .open in setOpen()) is what actually removes them from the tab
+     order; this pair of rules now only covers the mouse. */
   #devSeasonPanel.open .dev-season-buttons{
     pointer-events:auto;
   }
@@ -1777,7 +1857,7 @@
     display:flex; align-items:center; gap:8px; width:92px;
     background:#1C1E26; border:0.5px solid #262834; color:#F4F5F7;
     padding:6px 10px; border-radius:7px; font-size:11px;
-    font-family:'JetBrains Mono',monospace;
+    font-family:'JetBrains Mono',monospace; font-weight:500;
     white-space:nowrap; cursor:pointer; transition:background .12s ease;
   }
   #devSeasonPanel .dev-season-buttons svg,
@@ -3182,9 +3262,27 @@ function load(){
   }
   renderAll();
 }
+// Every write path funnels through here so a failure is reported ONCE, in the
+// same status pill everything else uses, instead of only to the console. This
+// app's entire premise is that what you enter is still there tomorrow -- a
+// full quota or a locked-down private-browsing profile otherwise leaves the
+// car sitting in the list looking perfectly saved while nothing reached disk,
+// which is the one failure mode that must never be silent.
+// Deliberately not a modal or a retry: the in-memory state is still correct
+// and usable for this session, so this is a warning, not a dead end.
+function persist(key, value, what){
+  try{
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  }catch(e){
+    console.error("storage error", e);
+    setShareStatus(`Couldn't save ${what} — browser storage is full or blocked.`, "error");
+    return false;
+  }
+}
+
 function save(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(cars)); }
-  catch(e){ console.error("storage error", e); }
+  persist(STORE_KEY, cars, "your garage");
 }
 
 function loadOwnedWheelspinCars(){
@@ -3197,8 +3295,7 @@ function loadOwnedWheelspinCars(){
 }
 
 function saveOwnedWheelspinCars(){
-  try{ localStorage.setItem(WHEELSPIN_OWNED_KEY, JSON.stringify([...ownedWheelspinCars])); }
-  catch(error){ console.error("storage error", error); }
+  persist(WHEELSPIN_OWNED_KEY, [...ownedWheelspinCars], "your Spins & Unlocks progress");
 }
 
 function loadCollapsedSpinBrands(){
@@ -3216,8 +3313,7 @@ function loadCollapsedSpinBrands(){
 }
 
 function saveCollapsedSpinBrands(){
-  try{ localStorage.setItem(SPIN_COLLAPSED_KEY, JSON.stringify([...collapsedSpinBrands])); }
-  catch(error){ console.error("storage error", error); }
+  persist(SPIN_COLLAPSED_KEY, [...collapsedSpinBrands], "which brand groups are collapsed");
 }
 
 function applySpinGroupCollapseState(section, brand, collapsed){
@@ -3246,10 +3342,17 @@ function toggleSpinBrandCollapsed(brand){
   else renderSuperWheelspinCars();
 }
 
+// Scoped to the groups currently on screen, exactly like Check all / Uncheck
+// all beside it -- the two button pairs sit in the same row and have to mean
+// the same thing by "all". This used to read the UNfiltered brandGroups while
+// the DOM loop below only ever touched the rendered (filtered) sections, so
+// the two halves disagreed: searching "ferrari" and hitting Collapse all
+// visibly collapsed one group but silently persisted all 40 as collapsed, and
+// clearing the search then revealed a fully-collapsed list nobody asked for.
 function setAllSpinBrandsCollapsed(collapsed){
-  const {brandGroups} = getFilteredWheelspinGroups();
-  if(collapsed) brandGroups.forEach(group => collapsedSpinBrands.add(group.title));
-  else brandGroups.forEach(group => collapsedSpinBrands.delete(group.title));
+  const {filteredGroups} = getFilteredWheelspinGroups();
+  if(collapsed) filteredGroups.forEach(group => collapsedSpinBrands.add(group.title));
+  else filteredGroups.forEach(group => collapsedSpinBrands.delete(group.title));
   saveCollapsedSpinBrands();
   document.querySelectorAll(".spin-group").forEach(section => {
     const brand = section.dataset.brand;
@@ -3312,8 +3415,8 @@ function refreshSpinCounts(){
   // re-running the whole filter pipeline just to learn how many survived it.
   const visible = document.querySelectorAll("#spinGroups .spin-car").length;
   document.getElementById("spinCount").textContent = query || wheelspinCollectionFilter !== "all"
-    ? `${visible} of ${total} cars | ${owned} collected`
-    : `${total} cars | ${owned} collected`;
+    ? `${visible} of ${total} cars · ${owned} collected`
+    : `${total} cars · ${owned} collected`;
 }
 
 // Single source of truth for "which Spins & Unlocks cars currently match the
@@ -3887,6 +3990,7 @@ function renderCarSuggestions(){
     panel.hidden = true;
     setCarSuggestionsLayerOpen(false);
     input.setAttribute("aria-expanded", "false");
+    syncActiveSuggestion();
     return;
   }
 
@@ -3901,6 +4005,13 @@ function renderCarSuggestions(){
     const button = document.createElement("button");
     button.type = "button";
     button.className = "suggestion" + (index === activeSuggestionIndex ? " active" : "");
+    // Focus never actually leaves the input (that's the point of a combobox),
+    // so each option needs a stable id for aria-activedescendant to point at,
+    // and role=option to be announced as one.
+    button.id = "carSuggestion-" + index;
+    button.setAttribute("role", "option");
+    button.setAttribute("aria-selected", String(index === activeSuggestionIndex));
+    button.tabIndex = -1;
     const name = document.createElement("span");
     name.className = "suggestion-name";
     name.textContent = car.name;
@@ -3918,6 +4029,24 @@ function renderCarSuggestions(){
   panel.hidden = !hasSuggestions;
   setCarSuggestionsLayerOpen(hasSuggestions);
   input.setAttribute("aria-expanded", hasSuggestions ? "true" : "false");
+  syncActiveSuggestion();
+}
+
+// The panel caps at 252px but shows up to 8 rows of ~37px, so arrowing past
+// the fifth option walked the highlight somewhere the user couldn't see.
+// block:"nearest" scrolls only when the row is genuinely out of view, so
+// moving between already-visible options doesn't jog the list.
+function syncActiveSuggestion(){
+  const input = document.getElementById("newName");
+  const active = activeSuggestionIndex >= 0
+    ? document.getElementById("carSuggestion-" + activeSuggestionIndex)
+    : null;
+  if(active){
+    input.setAttribute("aria-activedescendant", active.id);
+    active.scrollIntoView({block:"nearest"});
+  }else{
+    input.removeAttribute("aria-activedescendant");
+  }
 }
 
 function hideCarSuggestions(){
@@ -3930,7 +4059,13 @@ function hideCarSuggestions(){
     panel.hidden = true;
   }
   setCarSuggestionsLayerOpen(false);
-  if(input) input.setAttribute("aria-expanded", "false");
+  if(input){
+    input.setAttribute("aria-expanded", "false");
+    // Must go with the options themselves -- an activedescendant pointing at
+    // an id that no longer exists leaves the field permanently claiming a
+    // current option in a list it has just told the user is closed.
+    input.removeAttribute("aria-activedescendant");
+  }
 }
 
 function syncNameClearButton(){
@@ -4099,8 +4234,15 @@ function startCarEdit(id){
 // way the Spins & Unlocks tab already does. Names typed without a year
 // (or with the year anywhere but the start) are left untouched.
 function splitCarNameYear(name){
-  const match = String(name || "").match(/^(\d{4})\s+(.+)$/);
-  return match ? {year: match[1], rest: match[2]} : {year: "", rest: name};
+  // `rest` falls back to the COERCED string, not the raw argument -- returning
+  // the original meant a non-string name (null from a hand-edited
+  // localStorage entry, undefined from a future field rename) flowed straight
+  // into carComparatorFor's .localeCompare and threw, taking the whole list
+  // render down. isValidStoredCar keeps that out today; this makes the helper
+  // safe on its own terms rather than relying on every caller upstream.
+  const text = String(name || "");
+  const match = text.match(/^(\d{4})\s+(.+)$/);
+  return match ? {year: match[1], rest: match[2]} : {year: "", rest: text};
 }
 
 function carComparatorFor(mode){
@@ -4233,18 +4375,43 @@ function renderList(){
   wrap.appendChild(fragment);
 }
 
+// Everything renderList() would have set differently for a set-aside car,
+// applied in place to the row that is already on screen. Kept adjacent to the
+// row-building code in renderList() -- the two have to agree on .disliked,
+// .flagbtn.active, aria-pressed and the aria-label wording.
+function updateCarRowFlag(row, car){
+  const disliked = Boolean(car.disliked);
+  row.classList.toggle("disliked", disliked);
+  const flag = row.querySelector(".flagbtn");
+  if(!flag) return;
+  flag.classList.toggle("active", disliked);
+  flag.setAttribute("aria-pressed", String(disliked));
+  flag.setAttribute("aria-label", (disliked ? "Unmark " : "Mark ") + car.name + " as set aside");
+}
+
 function renderGrid(){
   const table = document.getElementById("covTable");
   table.innerHTML = "";
+  // Real thead/tbody and real scope="col"/"row" headers. The rows used to be
+  // appended straight to <table> (so the browser invented a tbody and the
+  // class row landed inside it as ordinary content), and each race label was
+  // a <td> doing a <th>'s job. That costs nothing visually -- the styling is
+  // by class, not element -- but it is the difference between a screen reader
+  // announcing "Dirt Racing, class A, 2 cars" when it lands on a cell and
+  // announcing just "2 cars" with no idea which row or column it is in.
+  const thead = document.createElement("thead");
   const head = document.createElement("tr");
-  const corner = document.createElement("th"); corner.className="corner"; corner.textContent="Race \\ Class";
+  const corner = document.createElement("th"); corner.className="corner"; corner.scope="col"; corner.textContent="Race \\ Class";
   head.appendChild(corner);
   CLASS_ORDER.forEach(c=>{
     const th = document.createElement("th"); th.textContent=c;
+    th.scope = "col";
     th.style.background=CLASS_COLOR[c];
     head.appendChild(th);
   });
-  table.appendChild(head);
+  thead.appendChild(head);
+  table.appendChild(thead);
+  const tbody = document.createElement("tbody");
 
   // Grouping cars into a race+class -> [cars] map in a single pass, then
   // reading from it while building the 48 grid cells, replaces what used to
@@ -4263,7 +4430,7 @@ function renderGrid(){
 
   RACE_ORDER.forEach(r=>{
     const tr = document.createElement("tr");
-    const rh = document.createElement("td"); rh.className="racehead"; rh.textContent=r;
+    const rh = document.createElement("th"); rh.className="racehead"; rh.scope="row"; rh.textContent=r;
     rh.style.background=RACE_COLOR[r];
     tr.appendChild(rh);
     CLASS_ORDER.forEach(c=>{
@@ -4285,8 +4452,9 @@ function renderGrid(){
       };
       tr.appendChild(td);
     });
-    table.appendChild(tr);
+    tbody.appendChild(tr);
   });
+  table.appendChild(tbody);
 }
 
 function renderDirtRoutes(){
@@ -4486,8 +4654,8 @@ function renderSuperWheelspinCars(){
     button.setAttribute("aria-pressed", String(isActive));
   });
   document.getElementById("spinCount").textContent = query || wheelspinCollectionFilter !== "all"
-    ? `${visibleCount} of ${totalCount} cars | ${ownedCount} collected`
-    : `${totalCount} cars | ${ownedCount} collected`;
+    ? `${visibleCount} of ${totalCount} cars · ${ownedCount} collected`
+    : `${totalCount} cars · ${ownedCount} collected`;
   list.replaceChildren();
 
   if(visibleCount === 0){
@@ -4711,6 +4879,13 @@ function syncGaugeVisibility(tab){
   const show = TABS_WITH_GAUGE.has(tab);
   slot.classList.toggle("is-collapsed", !show);
   slot.setAttribute("aria-hidden", String(!show));
+  // aria-hidden alone was a claim the page didn't honour: the collapsed slot
+  // still has real layout (0fr row + overflow:hidden, not display:none), so
+  // the ignition button inside it stayed in the tab order -- a keyboard user
+  // on Dirt/Spins would tab straight into a control that isn't on screen and
+  // that screen readers have been told doesn't exist. `inert` removes the
+  // whole subtree from focus and from the accessibility tree in one step.
+  slot.toggleAttribute("inert", !show);
 }
 
 // How long to wait for the gauge collapse/expand to finish before (or after)
@@ -4844,6 +5019,15 @@ function syncTabScrollHint(){
 document.querySelector(".tabs").addEventListener("scroll", syncTabScrollHint, {passive:true});
 window.addEventListener("resize", syncTabScrollHint);
 syncTabScrollHint();
+// The tab labels are Rajdhani, which is still downloading when this script
+// runs -- so the first measurement above is of the FALLBACK font's metrics,
+// not the ones the strip finally renders at. Rajdhani is narrower than the
+// sans-serif fallback, so the strip could be marked as overflowing (fading
+// its right edge) when the real font leaves every tab comfortably in view,
+// and the hint would then stay wrong until something happened to fire a
+// resize. Re-measuring once the fonts settle is the whole fix; the promise
+// resolves immediately if they were already cached.
+document.fonts?.ready.then(syncTabScrollHint);
 
 // Arrow-key navigation across the tab strip, per the ARIA tabs pattern.
 // Activation follows focus (moving to a tab selects it), which is the
@@ -4885,15 +5069,26 @@ function showUndoToast(car, index){
   // manage and the aria-live region still announces the removal.
   toast.hidden = false;
   void toast.offsetWidth;
-  toast.classList.add("show");
+  setUndoToastShown(true);
   clearTimeout(undoToastTimer);
   // 6s, not the status pill's 2.6s -- undo needs time to notice and react.
   undoToastTimer = setTimeout(hideUndoToast, 6000);
 }
 
+// Visibility and reachability are one switch rather than two, so the Undo
+// button can never be tabbable while the toast is invisible. `hidden` stays
+// off after the first delete (the aria-live region has to remain in the DOM
+// to announce anything), and opacity:0 alone leaves a control in the tab
+// order -- `inert` is what actually takes it out.
+function setUndoToastShown(shown){
+  const toast = document.getElementById("undoToast");
+  toast.classList.toggle("show", shown);
+  toast.toggleAttribute("inert", !shown);
+}
+
 function hideUndoToast(){
   clearTimeout(undoToastTimer);
-  document.getElementById("undoToast").classList.remove("show");
+  setUndoToastShown(false);
   pendingUndo = null;
 }
 
@@ -4929,8 +5124,18 @@ document.getElementById("carList").addEventListener("click", event=>{
     save();
     // renderChips() is deliberately not called: the filter chips reflect the
     // race/class filters, which a set-aside toggle cannot change.
+    //
+    // renderList() isn't called either. A set-aside toggle changes exactly one
+    // row's appearance -- it can't reorder the list, and it can't change which
+    // rows pass the race/class filters -- so rebuilding all of them was both
+    // waste that grows with the garage (~6ms at 200 cars) and an actual visual
+    // bug: the row under the cursor was destroyed and replaced, and the new
+    // node isn't matched by :hover until the pointer moves again, so the three
+    // action icons the user was aiming at silently vanished mid-click.
+    // Same surgical-update approach the Spins tab already uses for its own
+    // check-off path (see updateSpinCarRow).
+    updateCarRowFlag(row, car);
     renderGauge();
-    renderList();
     renderGrid();
     return;
   }
@@ -5264,7 +5469,12 @@ drawMomijiLogo("devMomijiIcon", 16);
     drawer.style.transition = animate ? "transform .28s cubic-bezier(0.16, 1, 0.3, 1)" : "none";
     drawer.style.transform = `translateX(${open ? 0 : trayWidth}px)`;
     panel.classList.toggle("open", open);
-    handle.setAttribute("aria-expanded", open);
+    // The tray is parked off-screen when closed, so its buttons must leave the
+    // tab order with it -- the CSS pointer-events:none beside it only ever
+    // covered the mouse. The handle itself stays outside this element, so it
+    // remains focusable and can always be used to open the drawer again.
+    tray.toggleAttribute("inert", !open);
+    handle.setAttribute("aria-expanded", String(open));
   }
 
   // The drawer only needs to travel exactly the tray's own width to fully
