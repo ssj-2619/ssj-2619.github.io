@@ -1520,7 +1520,7 @@
         <!-- Versioning: major.minor bumps for scope (new tab/capability = +0.1,
              smaller info-panel-scale feature = +0.01), small tweaks/fixes append
              or increment a _N suffix on the current version (e.g. this build). -->
-        <span class="build-tag">v1.16_20</span>
+        <span class="build-tag">v1.16_21</span>
       </div>
       <div class="sub">A CAR TRACKER FOR FORZA HORIZON 6</div>
     </div>
@@ -2150,6 +2150,7 @@ const SPIN_UNLOCK_CARS = [
   ["2017 Aston Martin Vulcan AMR Pro", ["super"]],
   ["2022 Aston Martin Valkyrie AMR Pro", ["super"]],
   ["1981 BMW M1", ["super"]],
+  ["1972 Datsun 240Z #5 Rallye", ["super"]],
   ["1969 Dodge Charger R/T", ["super"]],
   ["1999 Dodge Viper GTS ACR Forza Edition", ["super"]],
   ["1962 Ferrari 250 GTO", ["super"]],
@@ -2239,9 +2240,10 @@ const SPIN_UNLOCK_CARS = [
   ["1994 Ford Supervan 3", ["unlock"]],
   ["2023 Honda Civic Type R", ["unlock"]]
 ].map(([name, perks]) => ({name, perks}));
-// Nova's Autoshow, verified offline on 2026-10-07. Preserve existing display
+// Nova's Autoshow, mastery refreshed offline on 2026-10-08. Preserve existing display
 // names and checklist identities; the corrected Wuling year has an explicit alias.
 // Frozen evidence and repeatable extraction: review/round2-nova, scripts/build-wheelspin-data.cjs.
+// Full mastery refresh: review/nova-full-mastery-2026-10-08-rescan (650 cars).
 const WHEELSPIN_NAME_ALIASES = new Map([
   ["2013 Wuling Sunshine S Forza Edition", "2020 Wuling Sunshine S Forza Edition"],
   ["2021 Mercedes-AMG Mercedes-AMG ONE", "2021 Mercedes-AMG One"],
@@ -2262,6 +2264,7 @@ const SUPER_WHEELSPIN_BRAND_RULES = [
   ["Audi","Audi"],
   ["BMW","BMW"],
   ["Chevrolet","Chevrolet"],
+  ["Datsun","Datsun"],
   ["Dodge","Dodge"],
   ["Ferrari","Ferrari"],
   ["Ford","Ford"],
