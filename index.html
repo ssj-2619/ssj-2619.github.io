@@ -19,11 +19,15 @@
      the difference between the offline render matching the online one and not.
      Adding a weight to a rule means adding it to this URL in the same edit. -->
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
+<style>:root{
     --ink:#0A0A0E; --panel:#15161C; --panel2:#1C1E26; --line:#262834;
     --cyan:#2DE2D6; --magenta:#FF2D87; --amber:#FFB627; --mint:#3DFFB0;
     --hi:#F4F5F7; --lo:#85878F; --dim:#4D4F58;
+    --font-body:'Inter',system-ui,sans-serif;
+    --font-display:'Rajdhani',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+    --radius-control:8px; --radius-panel:12px;
+    --control-height:36px; --focus-color:var(--cyan);
     /* One column track shared by the garage list AND the add form above it,
        so the class/race controls in the form sit directly over the class/race
        badges in the list. Both use --garage-cols; a track that differed
@@ -43,7 +47,7 @@
        actually hold. Both stay fr rather than fixed so they give way together
        on a narrow viewport; pinning the note to a fixed 185px instead starved
        the name down to 17px at 600px wide. */
-    --garage-cols: minmax(0,2.4fr) 64px 144px minmax(0,1fr) 82px;
+    --garage-cols: minmax(0,2.4fr) 64px 144px minmax(100px,1fr) 82px;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   /* 20px of tail, not 64. The generous version was breathing room for the
@@ -77,6 +81,11 @@
   }
   .shell{max-width:992px; margin:0 auto;}
   h1,h2,h3{font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:.01em;}
+  button{touch-action:manipulation;}
+  :where(button,input,select,textarea,[tabindex]):focus-visible{
+    outline:2px solid var(--focus-color); outline-offset:3px;
+  }
+  [inert]{pointer-events:none;}
 
   /* ---------- header ---------- */
   .head{display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:28px;}
@@ -483,7 +492,8 @@
     transition:background .16s ease, border-color .16s ease;
   }
   .custom-select-trigger:hover{background:#1B1D26;}
-  .custom-select-trigger:focus{outline:none; box-shadow:none;}
+  .custom-select-trigger:focus:not(:focus-visible){outline:none; box-shadow:none;}
+  .custom-select-trigger:focus-visible{outline:2px solid var(--focus-color); outline-offset:2px;}
   .custom-select-trigger::after{
     content:""; flex:none; width:6px; height:6px; margin:-3px 1px 0 3px;
     border-right:1.5px solid var(--lo); border-bottom:1.5px solid var(--lo);
@@ -515,7 +525,8 @@
     transition:background .12s ease, color .12s ease;
   }
   .custom-select-option:hover,
-  .custom-select-option:focus{outline:none; background:#232630;}
+  .custom-select-option:focus{background:#232630;}
+  .custom-select-option:focus-visible{outline:2px solid var(--focus-color); outline-offset:-3px;}
   .custom-select-option[aria-selected="true"]{background:#1E212A; color:#fff;}
   .custom-select-option[aria-selected="true"]::after{
     content:""; width:5px; height:5px; flex:none; border-radius:50%; background:var(--cyan);
@@ -636,24 +647,9 @@
   }
   .addbtn:hover{filter:brightness(1.1);}
   .addrow.editing{border-color:rgba(45,226,214,.42); background:rgba(45,226,214,.035);}
-  /* "Save"+"Cancel" (136.9px) needs 55px more than the 82px "Add car" track.
-     Rather than re-declaring the grid for edit mode -- which would re-split
-     the flexible space and drag the name column along with it -- the action
-     cell keeps its 82px track and simply overhangs to the left, and the note
-     input gives up the same 55px so the two never meet. The name, class and
-     race columns are untouched by both, so nothing left of the note moves
-     when editing starts. 55px = the 43px the buttons actually reach into the
-     note's cell, plus the 12px grid gap kept clear between them.
-     Scoped above 560px: below that the form has already stacked, the note and
-     the button pair each own a full-width row of their own, and there is no
-     82px track to overhang out of. */
-  @media (min-width:561px){
-    .addrow.editing .addrow-actions{width:137px; justify-self:end;}
-    .addrow.editing #newNote{width:calc(100% - 55px);}
-    .addrow-actions, .addrow #newNote{transition:width .18s cubic-bezier(.2,.8,.2,1);}
-  }
-  @media (prefers-reduced-motion:reduce){
-    .addrow-actions, .addrow #newNote{transition:none;}
+  /* Editing owns an action track; the form stacks before notes are squeezed. */
+  @media (min-width:761px){
+    .addrow.editing{grid-template-columns:minmax(0,2.4fr) 64px 144px minmax(100px,1fr) 137px;}
   }
   .addrow.editing .addbtn{background:#39E7A8; color:#062016;}
   .cancel-edit{
@@ -692,9 +688,9 @@
   .share-status{
     position:absolute; right:0; top:2px; z-index:60;
     display:inline-flex; align-items:center; justify-content:center;
-    height:27px; padding:0 8px; box-sizing:border-box;
+    min-height:27px; max-width:100%; padding:0 8px; box-sizing:border-box;
     background:var(--panel2); border:0.5px solid var(--line); border-radius:7px;
-    font-size:11.5px; white-space:nowrap; color:var(--lo);
+    font-size:11.5px; white-space:normal; overflow-wrap:anywhere; color:var(--lo);
     opacity:0; transform:translateY(-3px); pointer-events:none;
     box-shadow:0 6px 16px rgba(0,0,0,.45);
     transition:opacity .2s ease, transform .2s ease;
@@ -1036,7 +1032,7 @@
   }
   .dirt-route-name{
     font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; color:var(--hi);
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .dirt-route-mix{
     flex:none; display:inline-flex; align-items:center; gap:6px;
@@ -1088,7 +1084,8 @@
   }
   .spin-filter button:hover{color:var(--hi); background:rgba(255,255,255,.035);}
   .spin-filter button.active{color:var(--hi); background:#292C35;}
-  .spin-filter button:focus{outline:none;}
+  .spin-filter button:focus:not(:focus-visible){outline:none;}
+  .spin-filter button:focus-visible{outline:2px solid var(--amber); outline-offset:1px;}
   .spin-actions-row{
     display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
     padding-top:14px; border-top:0.5px solid var(--line);
@@ -1227,7 +1224,8 @@
   .spin-check[aria-pressed="true"]{
     background:rgba(57,231,168,.17); border-color:rgba(57,231,168,.55); color:#39E7A8;
   }
-  .spin-check:focus{outline:none;}
+  .spin-check:focus:not(:focus-visible){outline:none;}
+  .spin-check:focus-visible{outline:2px solid var(--cyan); outline-offset:2px;}
   .spin-empty{
     grid-column:1/-1; text-align:center; padding:38px 20px;
     background:var(--panel); border:0.5px solid var(--line); border-radius:11px;
@@ -1276,21 +1274,23 @@
   /* ---------- modal ---------- */
   .overlay{
     position:fixed; inset:0; background:rgba(5,5,8,.7); display:none; align-items:center;
-    justify-content:center; z-index:50; padding:20px;
+    justify-content:center; z-index:1100; padding:20px; overscroll-behavior:contain;
   }
   .overlay.show{display:flex;}
   .modal{
     background:var(--panel); border:0.5px solid var(--line); border-radius:14px; padding:20px;
     max-width:340px; width:100%;
+    max-height:calc(100vh - 40px); max-height:calc(100dvh - 40px);
+    display:flex; flex-direction:column; overflow-y:auto; overscroll-behavior:contain;
   }
-  .modal h3{font-size:17px; margin-bottom:2px;}
-  .modal .sub{font-size:12px; color:var(--lo); margin-bottom:14px;}
-  .modal ul{list-style:none;}
-  .modal li{font-size:13.5px; padding:7px 0; border-bottom:0.5px solid var(--line);}
+  .modal h3{font-size:17px; margin-bottom:2px; flex-shrink:0;}
+  .modal .sub{font-size:12px; color:var(--lo); margin-bottom:14px; flex-shrink:0;}
+  .modal ul{list-style:none; min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:var(--dim) var(--panel);}
+  .modal li{font-size:13.5px; padding:7px 0; border-bottom:0.5px solid var(--line); overflow-wrap:anywhere;}
   .modal li:last-child{border-bottom:none;}
   .modal .close{
     margin-top:14px; width:100%; background:var(--panel2); border:0.5px solid var(--line); color:var(--hi);
-    border-radius:8px; padding:9px; font-family:'Rajdhani',sans-serif; font-weight:600; font-size:13.5px; cursor:pointer;
+    flex-shrink:0; border-radius:8px; padding:9px; font-family:'Rajdhani',sans-serif; font-weight:600; font-size:13.5px; cursor:pointer;
   }
   .wheelspin-import-note{font-size:12.5px; color:var(--lo); line-height:1.5; margin-bottom:16px;}
   .wheelspin-import-actions{display:flex; gap:8px;}
@@ -1333,9 +1333,8 @@
     text-shadow:0 0 6px rgba(45,226,214,.5);
   }
   /* Fixed full-viewport layer the cherry-blossom burst draws into -- see
-     runPetalTransition(). Sits above absolutely everything (including the
-     modal overlays' z-index:50) so the petals visibly pass in front of the
-     whole page, not just whatever panel happens to be on top. display:none
+     runPetalTransition(). Sits above page content while modal controls stay
+     on top, so a running burst never covers an open dialog. display:none
      when idle so it can never intercept clicks even with pointer-events
      unset by a future edit. */
   #sakuraCanvas{
@@ -1378,9 +1377,7 @@
     .spin-search{min-width:0;}
     .spin-body{flex-direction:column;}
     .spin-legend{display:none;}
-    .spin-groups{display:flex; flex-direction:column;}
-    .spin-column{display:contents;}
-    .spin-group{order:var(--brand-order);}
+    .spin-groups{grid-template-columns:1fr;}
     /* Below ~560px, the fixed-width class/race badges plus action icons
        (232px combined) leave the grid's 1fr name column only ~70-90px --
        barely enough for "2005 For…" before ellipsis. Switching to a
@@ -1417,6 +1414,93 @@
        .addrow-actions above), so they no longer need repeating here. */
     .addrow-actions{grid-column:1 / -1;}
   }
+
+  /* ---------- functional pagination and approved section cue ---------- */
+  .garage-pagination{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin-top:14px; padding:14px 0 0; border-top:1px solid var(--line);
+  }
+  .garage-pagination[hidden]{display:none;}
+  .garage-page-summary{font-family:var(--font-mono); font-size:11px; color:var(--lo);}
+  .garage-page-actions{display:flex; gap:8px; flex:none;}
+  .garage-page-actions button{
+    min-height:40px; padding:8px 12px; background:var(--panel2); color:var(--hi);
+    border:1px solid var(--line); border-radius:var(--radius-control); cursor:pointer;
+    font-family:var(--font-display); font-weight:600; font-size:14px;
+  }
+  .garage-page-actions button:hover:not(:disabled){border-color:var(--cyan); color:var(--cyan);}
+  .garage-page-actions button:disabled{color:var(--dim); opacity:.6; cursor:default;}
+
+
+  .tabbar{position:relative;}
+  #tabScrollCue{
+    position:absolute; top:0; width:24px; height:44px; min-height:44px;
+    padding:0; border:0; border-radius:0; background:transparent;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--cyan); cursor:pointer; z-index:3;
+  }
+  #tabScrollCue[hidden]{display:none;}
+  #tabScrollCue svg{width:13px; height:13px;}
+  #tabScrollCue:focus-visible{outline-offset:-3px;}
+
+  .spin-check:not([aria-pressed="true"]){border-color:#666D7D;}
+
+  @media (max-width:760px){
+    /* Only the form crosses the original visual breakpoint. */
+    .addrow{grid-template-columns:64px minmax(0,1fr); padding:12px;}
+    .addrow .name-field{grid-column:1 / -1;}
+    .addrow .custom-select[data-select-id="newClass"]{grid-column:1;}
+    .addrow .custom-select[data-select-id="newRace"]{grid-column:2;}
+    .addrow #newNote,.addrow-actions{grid-column:1 / -1;}
+    .garage-pagination{flex-wrap:wrap;}
+    .garage-page-actions button{min-height:44px;}
+
+    /* Approved changes 1 and 2. Other mobile controls keep original sizes. */
+    .gauge-content{height:224px;}
+    .spin-actions-row{display:grid; grid-template-columns:1fr; gap:8px;}
+    .spin-collapse-actions,.spin-bulk{
+      display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; align-self:stretch;
+    }
+    .spin-collapse-actions button,.spin-bulk button{min-height:44px; flex:1;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{scroll-behavior:auto !important; transition:none !important;}
+  }
+</style>
+<style id="approvedAesthetic20261008">
+/* User approved proposals 3, 4, 5 and 8 on 8 October 2026. */
+@media (min-width:761px){
+  /* 3: spacing */
+
+  .head{margin-bottom:24px;}
+  .wordmark-row .build-tag{margin-left:0;}
+  .filterbar{gap:12px;}
+  .addrow,.row{padding-left:16px; padding-right:16px;}
+  .spin-intro,.surface-summary{padding:16px; margin-bottom:16px;}
+  .spin-intro{gap:16px;}
+  .spin-actions-row{padding-top:16px;}
+  .spin-body{gap:16px;}
+  .spin-groups,.spin-column{gap:12px;}
+  .spin-group-head{padding:12px 16px;}
+  .spin-car{padding:8px 16px;}
+  .dirt-route-list{gap:12px;}
+  .dirt-route{padding:16px;}
+  .surface-summary-top{margin-bottom:12px;}
+  /* 4: edit */
+
+  .addrow.editing{grid-template-columns:var(--garage-cols);}
+  .addrow.editing #newNote{grid-column:4 / -1;}
+  .addrow.editing .addrow-actions{grid-column:1 / -1; justify-content:flex-end; padding-top:12px; border-top:1px solid var(--line);}
+  .addrow.editing .addrow-actions .addbtn{flex:0 0 auto; min-width:68px;}
+  .addrow.editing .cancel-edit{min-width:64px;}
+  /* 5: borders */
+
+  .spin-group-head{border:0; border-bottom:1px solid var(--line);}
+  /* 8: errors */
+
+  .share-status-row:has(.share-status.show[data-state="error"]){height:auto; margin:0 0 16px; text-align:left;}
+  .share-status.show[data-state="error"]{position:relative; inset:auto; display:flex; justify-content:flex-start; width:100%; padding:12px 16px; line-height:18px; transform:none; box-shadow:none;}
+}
 </style>
 </head>
 <body>
@@ -1436,7 +1520,7 @@
         <!-- Versioning: major.minor bumps for scope (new tab/capability = +0.1,
              smaller info-panel-scale feature = +0.01), small tweaks/fixes append
              or increment a _N suffix on the current version (e.g. this build). -->
-        <span class="build-tag">v1.16_19</span>
+        <span class="build-tag">v1.16_20</span>
       </div>
       <div class="sub">A CAR TRACKER FOR FORZA HORIZON 6</div>
     </div>
@@ -1816,28 +1900,30 @@
      of the grab cursor this CSS actually sets. A few px of clearance keeps
      the pointer inside normal page content. */
   #devSeasonPanel{
+    pointer-events:none;
     position:fixed; bottom:20px; right:4px; z-index:1000;
   }
   #devSeasonPanel .dev-season-drawer{
     display:flex; align-items:center;
   }
   #devSeasonPanel .dev-season-handle{
-    width:16px; height:46px; flex:none; padding:0;
-    background:#15161C; border:0.5px solid #262834; border-radius:10px 0 0 10px;
+    pointer-events:auto;
+    width:28px; height:48px; flex:none; padding:0;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px 0 0 10px;
     display:flex; align-items:center; justify-content:center;
     cursor:grab; touch-action:none;
     transition:background .12s ease;
   }
   #devSeasonPanel .dev-season-handle:active{cursor:grabbing;}
-  #devSeasonPanel .dev-season-handle:hover{background:#1C1E26;}
+  #devSeasonPanel .dev-season-handle:hover{background:var(--panel2);}
   #devSeasonPanel .dev-season-handle::before{
     content:""; width:3px; height:22px; border-radius:3px;
-    background:#3A3D4A; transition:background .12s ease;
+    background:var(--dim); transition:background .12s ease;
   }
-  #devSeasonPanel .dev-season-handle:hover::before{background:#5A5F70;}
+  #devSeasonPanel .dev-season-handle:hover::before{background:var(--cyan);}
   #devSeasonPanel .dev-season-buttons{
     display:flex; flex-direction:column; gap:6px;
-    background:#15161C; border:0.5px solid #262834;
+    background:var(--panel); border:1px solid var(--line);
     border-radius:10px; padding:8px;
     box-shadow:-8px 0 20px rgba(0,0,0,.4);
     pointer-events:none;
@@ -1855,9 +1941,9 @@
   }
   #devSeasonPanel .dev-season-buttons button{
     display:flex; align-items:center; gap:8px; width:92px;
-    background:#1C1E26; border:0.5px solid #262834; color:#F4F5F7;
-    padding:6px 10px; border-radius:7px; font-size:11px;
-    font-family:'JetBrains Mono',monospace; font-weight:500;
+    background:var(--panel2); border:1px solid var(--line); color:var(--hi);
+    min-height:36px; padding:6px 10px; border-radius:7px; font-size:11px;
+    font-family:var(--font-mono); font-weight:500;
     white-space:nowrap; cursor:pointer; transition:background .12s ease;
   }
   #devSeasonPanel .dev-season-buttons svg,
@@ -1878,8 +1964,8 @@
 </style>
 <div id="devSeasonPanel">
  <div class="dev-season-drawer">
-  <button type="button" class="dev-season-handle" id="devSeasonHandle" aria-label="Preview a season" aria-expanded="false"></button>
-  <div class="dev-season-buttons">
+  <button type="button" class="dev-season-handle" id="devSeasonHandle" aria-label="Preview a season" aria-expanded="false" aria-controls="devSeasonButtons"></button>
+  <div class="dev-season-buttons" id="devSeasonButtons">
     <button type="button" data-dev-season="spring">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><defs><path id="sakuraPetalDev" d="M12,12 C10.1,10.7 9.5,8.2 10.7,6.2 Q11.1,5.0 11.55,5.3 Q12,7.2 12.45,5.3 Q12.9,5.0 13.3,6.2 C14.5,8.2 13.9,10.7 12,12 Z"/></defs><use href="#sakuraPetalDev"/><use href="#sakuraPetalDev" transform="rotate(72 12 12)"/><use href="#sakuraPetalDev" transform="rotate(144 12 12)"/><use href="#sakuraPetalDev" transform="rotate(216 12 12)"/><use href="#sakuraPetalDev" transform="rotate(288 12 12)"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>
       <span>sakura</span>
@@ -1917,12 +2003,7 @@ const CLASS_COLOR = {"X":"#19D858","R":"#D61A9C","S2":"#165EDB","S1":"#B960E8","
 //
 // Two things used to be hardcoded per component, and both produced
 // unreadable chips for at least one colour in the palette:
-// Filled chips (class badges, coverage headers) are handled entirely in CSS
-// now: white ink plus a dark halo, matching how FH6 draws its own class
-// badges. An earlier version picked the ink per colour by luminance, which
-// maximised contrast but meant S2 and R came out white while the other six
-// came out black -- correct by the numbers, visibly inconsistent, and not
-// what the game does.
+// Filled chips retain the game's white lettering and the original CSS halo.
 //
 // What still needs deriving is the OUTLINE chip: there the accent colour
 // itself is the text, sitting on the dark panel, and several brand colours
@@ -2024,10 +2105,12 @@ const SPIN_UNLOCK_CARS = [
   ["2021 Lamborghini Countach LPI 800-4", ["regular3","super"]],
   ["2021 Lamborghini Aventador LP 780-4 Ultimae", ["regular3","super"]],
   ["2024 Lamborghini Revuelto", ["regular3","super"]],
+  ["2024 Lamborghini Temerario", ["regular3","super"]],
   ["2020 Lotus Evija", ["regular3","super"]],
   ["1991 Mazda #55 Mazda 787B", ["regular3","super"]],
   ["2013 McLaren P1", ["regular3","super"]],
   ["2019 McLaren Speedtail", ["regular3","super"]],
+  ["2025 McLaren W1", ["regular3","super"]],
   ["1983 Nissan #11 Tomica Skyline Turbo Super Silhouette", ["regular3","super"]],
   ["1998 Nissan #23 Pennzoil NISMO Skyline GT-R", ["regular3","super"]],
   ["2010 Pagani Zonda Cinque Roadster", ["regular3","super"]],
@@ -2044,7 +2127,7 @@ const SPIN_UNLOCK_CARS = [
   ["1961 Jaguar E-type", ["regular","super"]],
   ["1967 Lamborghini Miura P400", ["regular","super"]],
   ["2010 Lexus LFA Forza Edition", ["regular","super"]],
-  ["2021 Mercedes-AMG One", ["regular","super"]],
+  ["2021 Mercedes-AMG One", ["regular3","super"]],
   ["1954 Mercedes-Benz 300 SL Coupe", ["regular","super"]],
   ["1990 Mercedes-Benz 190 E 2.5-16 Evolution II Forza Edition", ["regular","super"]],
   ["2005 Mitsubishi #1 Sierra Sierra Enterprises", ["regular","super"]],
@@ -2056,7 +2139,7 @@ const SPIN_UNLOCK_CARS = [
   ["1985 Toyota Sprinter Trueno GT Apex Forza Edition", ["regular","super"]],
   ["2019 Toyota Tacoma TRD Pro Forza Edition", ["regular","super"]],
   ["1965 Shelby Cobra 427 S/C", ["regular","super"]],
-  ["2013 Wuling Sunshine S Forza Edition", ["regular","super"]],
+  ["2020 Wuling Sunshine S Forza Edition", ["regular","super"]],
 
   ["1965 Alfa Romeo Giulia TZ2", ["super"]],
   ["1968 Alfa Romeo 33 Stradale", ["super"]],
@@ -2091,6 +2174,7 @@ const SPIN_UNLOCK_CARS = [
   ["2005 Honda NSX-R GT", ["super"]],
   ["1956 Jaguar D-Type", ["super"]],
   ["1964 Jaguar Lightweight E-Type", ["super"]],
+  ["1990 Jaguar XJ-S Forza Edition", ["super"]],
   ["2008 Koenigsegg CCGT", ["super"]],
   ["1997 Lamborghini Diablo SV", ["super"]],
   ["2011 Lamborghini Sesto Elemento", ["super"]],
@@ -2117,6 +2201,7 @@ const SPIN_UNLOCK_CARS = [
   ["1970 Porsche #3 917 LH", ["super"]],
   ["1982 Porsche 911 Turbo 3.3", ["super"]],
   ["1987 Porsche 959", ["super"]],
+  ["1987 Porsche #203 Porsche AG 961", ["super"]],
   ["2019 Porsche #70 Porsche Motorsport 935", ["super"]],
   ["2022 Porsche Mission R", ["super"]],
   ["1965 Shelby Cobra Daytona Coupe", ["super"]],
@@ -2143,6 +2228,7 @@ const SPIN_UNLOCK_CARS = [
   ["2007 Peugeot 207 Super 2000", ["regular"]],
   ["1985 Porsche #185 959 Prodrive Rally Raid", ["regular"]],
   ["2023 Porsche 911 Rallye", ["regular"]],
+  ["1987 Porsche 911 Carrera Coupe 'Luftauto 002'", ["regular"]],
   ["2018 Subaru WRX STI ARX Supercar", ["regular"]],
   ["2017 Volkswagen #34 Andretti Rally Cross Beetle", ["regular"]],
 
@@ -2153,6 +2239,21 @@ const SPIN_UNLOCK_CARS = [
   ["1994 Ford Supervan 3", ["unlock"]],
   ["2023 Honda Civic Type R", ["unlock"]]
 ].map(([name, perks]) => ({name, perks}));
+// Nova's Autoshow, verified offline on 2026-10-07. Preserve existing display
+// names and checklist identities; the corrected Wuling year has an explicit alias.
+// Frozen evidence and repeatable extraction: review/round2-nova, scripts/build-wheelspin-data.cjs.
+const WHEELSPIN_NAME_ALIASES = new Map([
+  ["2013 Wuling Sunshine S Forza Edition", "2020 Wuling Sunshine S Forza Edition"],
+  ["2021 Mercedes-AMG Mercedes-AMG ONE", "2021 Mercedes-AMG One"],
+  ["2005 Mitsubishi #1 Sierra Sierra Enterprises Lancer Evolution Time Attack", "2005 Mitsubishi #1 Sierra Sierra Enterprises"],
+  ["1985 Toyota Sprinter Trueno GT-APEX Forza Edition", "1985 Toyota Sprinter Trueno GT Apex Forza Edition"],
+  ["2018 Ferrari FXX-K Evo 'Welcome Pack'", "2018 Ferrari FXX-K Evo Welcome Pack"],
+  ["2020 Mercedes-AMG GT Black Series 'Welcome Pack'", "2020 Mercedes-AMG GT Black Series Welcome Pack"],
+  ["1989 Nissan PAO", "1989 Nissan Pao"],
+  ["2013 Toyota 86 'Stories'", "2013 Toyota 86 Stories"]
+]);
+const WHEELSPIN_ALIASED_NAMES = new Set(WHEELSPIN_NAME_ALIASES.values());
+function canonicalWheelspinName(name){ return WHEELSPIN_NAME_ALIASES.get(name) || name; }
 const SUPER_WHEELSPIN_BRAND_RULES = [
   ["Alfa Romeo","Alfa Romeo"],
   ["AMG Transport Dynamics","AMG Transport Dynamics"],
@@ -2878,13 +2979,41 @@ function drawParticleWash(ctx, w, h, density, template, washAlpha){
 }
 
 let sakuraBurstRunning = false;
+const seasonSpriteCache = new Map();
+function getSeasonSprites(season, config, dpr){
+  const cached = seasonSpriteCache.get(season);
+  if(cached?.dpr === dpr) return cached.sprites;
+  const sprites = config.buildSprites();
+  // Four seasons only; changing screen density replaces that season's old sprites.
+  seasonSpriteCache.set(season, {dpr, sprites});
+  return sprites;
+}
 function runPetalTransition(season, onDone){
   if(sakuraBurstRunning) return;
-  sakuraBurstRunning = true;
   const config = SEASON_PARTICLES[season];
   const canvas = document.getElementById("sakuraCanvas");
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas?.getContext("2d");
+  if(!config || !ctx || document.hidden){ onDone?.(); return; }
+  sakuraBurstRunning = true;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let frameId = 0;
+  let finished = false;
+
+  function finish(){
+    if(finished) return;
+    finished = true;
+    cancelAnimationFrame(frameId);
+    window.removeEventListener("resize", resizeCanvas);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.removeEventListener("pagehide", finish);
+    canvas.style.display = "none";
+    // Release the full-screen bitmap while the decorative effect is idle.
+    canvas.width = 0;
+    canvas.height = 0;
+    sakuraBurstRunning = false;
+    onDone?.();
+  }
+  function onVisibilityChange(){ if(document.hidden) finish(); }
 
   function resizeCanvas(){
     canvas.width = window.innerWidth * dpr;
@@ -2895,6 +3024,8 @@ function runPetalTransition(season, onDone){
   }
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  window.addEventListener("pagehide", finish);
 
   canvas.style.display = "block";
   canvas.style.opacity = "1";
@@ -2902,7 +3033,7 @@ function runPetalTransition(season, onDone){
   const DURATION_MS = 4400;
   const startTime = performance.now();
   let lastTime = startTime;
-  let particles = [];
+  const particles = [];
   // Fractional spawn budget accumulated every frame at a constant rate
   // (max/lifetime particles per second) and spent one at a time -- this is
   // what makes particles trickle in continuously for the whole burst instead
@@ -2914,9 +3045,10 @@ function runPetalTransition(season, onDone){
   // Rasterised once, here, for the whole burst -- not per particle and not
   // per frame. Everything the shapes gained (gradients, veins, stems, four
   // distinct snow crystals) costs exactly this one-time build.
-  const sprites = config.buildSprites();
+  const sprites = getSeasonSprites(season, config, dpr);
 
   function frame(now){
+    if(finished) return;
     const dt = Math.min((now - lastTime) / 1000, 0.05);
     lastTime = now;
     const elapsed = now - startTime;
@@ -2929,10 +3061,15 @@ function runPetalTransition(season, onDone){
     // in updateSpringParticle) before topping up -- this is what keeps a
     // steady stream spawning from the top for the whole burst instead of
     // the count visibly running dry near the end.
-    particles = particles.filter(p => !p.done);
+    let liveCount = 0;
+    for(const particle of particles) if(!particle.done) particles[liveCount++] = particle;
+    particles.length = liveCount;
     spawnBudget += spawnRate * dt;
     while(spawnBudget >= 1 && particles.length < config.max){
-      particles.push(config.spawn(w, h));
+      const particle = config.spawn(w, h);
+      let position = particles.length;
+      while(position > 0 && particles[position - 1].depth > particle.depth) position--;
+      particles.splice(position, 0, particle);
       spawnBudget -= 1;
     }
     // Once the population is sitting at the cap, the budget above has nothing
@@ -2949,23 +3086,19 @@ function runPetalTransition(season, onDone){
     // Far particles are painted first so near ones land on top of them. With
     // size, speed, opacity and now stacking order all agreeing, the field
     // resolves into layers instead of a single flat plane of shapes.
-    particles.sort((a, b) => a.depth - b.depth);
+    // Depth is fixed at spawn, so insertion preserves paint order without re-sorting every frame.
     particles.forEach(p => {
       config.update(p, dt, now, w, h, wind);
       config.draw(ctx, p, now, fade, sprites);
     });
 
     if(progress < 1){
-      requestAnimationFrame(frame);
+      frameId = requestAnimationFrame(frame);
     }else{
-      window.removeEventListener("resize", resizeCanvas);
-      canvas.style.display = "none";
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      sakuraBurstRunning = false;
-      onDone?.();
+      finish();
     }
   }
-  requestAnimationFrame(frame);
+  frameId = requestAnimationFrame(frame);
 }
 
 // afterBurst (optional) runs once the burst has fully finished AND on every
@@ -3077,6 +3210,7 @@ let tabEndTimer = 0;
 let gaugeSeqTimer = 0;
 let activeSuggestionIndex = -1;
 let currentSuggestions = [];
+let carSuggestionsBlurTimer = 0;
 const TAB_ORDER = ["garage","coverage","spins","dirt"];
 const TAB_PANEL_IDS = {
   garage:"panelGarage",
@@ -3091,18 +3225,19 @@ const TAB_TRANSITION_CLASSES = [
   "panel-slide-in-right"
 ];
 
-// Car ids were previously minted three different ways -- Date.now() when
-// adding, Date.now()+Math.random() when repairing storage, idBase+index when
-// importing -- and the plain Date.now() path collides outright if two cars
-// are added inside the same millisecond (trivial to hit by holding Enter, and
-// a duplicate id makes edit/delete act on the wrong row). One monotonic
-// counter seeded past any existing id gives every path a unique value.
-let nextCarId = 1;
-function mintCarId(){ return nextCarId++; }
-function reseedCarIds(existing){
-  const highest = existing.reduce((max, car)=> typeof car.id === "number" && car.id > max ? car.id : max, 0);
-  nextCarId = Math.max(nextCarId, highest + 1);
+// New ids do not share a counter between tabs. Existing safe numeric ids
+// remain valid; unsafe or duplicate legacy ids are repaired when read.
+let localIdSequence = 0;
+const localIdSeed = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+function mintCarId(){
+  if(globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  if(globalThis.crypto?.getRandomValues){
+    const random = globalThis.crypto.getRandomValues(new Uint32Array(4));
+    return [...random].map(value=>value.toString(16).padStart(8, "0")).join("");
+  }
+  return Date.now().toString(36) + "-" + localIdSeed + "-" + (++localIdSequence).toString(36);
 }
+function reseedCarIds(){ /* Compatibility with callers using the numeric format. */ }
 
 function raceRank(r){ const i = RACE_ORDER.indexOf(r); return i<0?99:i; }
 function classRank(c){ const i = CLASS_ORDER.indexOf(c); return i<0?99:i; }
@@ -3141,10 +3276,12 @@ function carSearchMeta(car){
 // enough per keystroke to visibly compete with the 16ms frame budget.
 function debounce(fn, wait){
   let timer = null;
-  return function(...args){
+  const debounced = function(...args){
     clearTimeout(timer);
-    timer = setTimeout(() => fn.apply(this, args), wait);
+    timer = setTimeout(() => { timer = null; fn.apply(this, args); }, wait);
   };
+  debounced.cancel = ()=>{ clearTimeout(timer); timer = null; };
+  return debounced;
 }
 
 function carSearchScore(car, query){
@@ -3208,57 +3345,263 @@ function migrateOldYearFormat(name){
   return `${year} ${model.trim()}`;
 }
 
-function load(){
-  let stored = null;
-  try{
-    const raw = localStorage.getItem(STORE_KEY);
-    stored = raw ? JSON.parse(raw) : null;
-  }catch(e){ stored = null; }
+const GARAGE_HEAD_KEY = STORE_KEY + "-v2-head";
+const GARAGE_RECORD_PREFIX = STORE_KEY + "-v2-record:";
+const SPINS_HEAD_KEY = WHEELSPIN_OWNED_KEY + "-v2-head";
+const SPINS_RECORD_PREFIX = WHEELSPIN_OWNED_KEY + "-v2-record:";
+const GARAGE_FIELDS = ["name", "cls", "race", "note", "disliked"];
+const garageByteEncoder = new TextEncoder();
+let garageStorageState = null;
+let spinsStorageState = null;
+let garageBaseline = new Map();
+let garageBaselineBytes = 0;
+let garageBaselineCarData = null;
+let garageBaselineEpoch = "legacy";
+let ownedWheelspinBaseline = new Set();
+let ownedWheelspinBaselineEpoch = "legacy";
+let spinsSaveFailed = false;
+const unsavedGarageIds = new Set();
+const garageDraftConflicts = new Map();
+const storageRecoveryCollections = new Set();
+let garageMutationQueue = Promise.resolve();
+let garageMutationPending = 0;
+let garageWriteSafetyWarning = "";
 
-  if(!Array.isArray(stored)){
-    cars = [];
-    if(stored !== null) console.error("Stored garage data was not an array; resetting.", stored);
-    save();
-  }else{
-    let anyMigrated = false;
-    let anyIdRepaired = false;
-    const valid = stored.filter(isValidStoredCar);
-    // Ids have to be unique, not merely present. Every lookup downstream is a
-    // find/findIndex/filter on `id`, so two rows sharing one makes edit target
-    // the wrong car -- and makes a single delete remove BOTH of them, since
-    // that path filters by id rather than removing one entry. Reachable in
-    // practice: an older build minted ids from Date.now(), which collides
-    // outright for two cars added inside the same millisecond, and those
-    // values are still sitting in long-lived localStorage.
-    // The counter is seeded past every id already in the file BEFORE any
-    // repair mints a replacement -- otherwise a fresh id could land on one
-    // belonging to a car further down the list that hasn't been read yet.
-    reseedCarIds(valid);
-    const usedIds = new Set();
-    const clean = valid.map(car=>{
-      const migratedName = migrateOldYearFormat(car.name);
-      if(migratedName !== car.name) anyMigrated = true;
-      let id = car.id;
-      if(typeof id !== "number" || !Number.isFinite(id) || usedIds.has(id)){
-        id = mintCarId();
-        anyIdRepaired = true;
+function runGarageMutation(operation){
+  garageMutationPending++;
+  document.querySelector(".addrow")?.toggleAttribute("inert", true);
+  const queued = garageMutationQueue.then(async()=>{
+    let started = false;
+    const run = ()=>{
+      started = true;
+      const before = cars;
+      readCollection("garage", true);
+      refreshSharedCollections(new Set([GARAGE_HEAD_KEY]), {render:false});
+      if(before.length !== cars.length || before.some((car,index)=>String(car.id) !== String(cars[index]?.id)
+        || GARAGE_FIELDS.some(field=>car[field] !== cars[index]?.[field]))) renderAll();
+      return operation();
+    };
+    const fallback = ()=>{
+      garageWriteSafetyWarning = "This browser can't coordinate garage changes across tabs. Keep this tracker open in one tab to avoid conflicting saves.";
+      setShareStatus("", "error");
+      return run();
+    };
+    try{
+      if(!globalThis.navigator?.locks?.request) return fallback();
+      try{
+        // Every garage read/modify/write path uses this same origin-wide lock.
+        return await navigator.locks.request("fh6-garage-write", {mode:"exclusive"}, run);
+      }catch(error){
+        if(started) throw error;
+        return fallback();
       }
-      usedIds.add(id);
-      return {
-        id,
-        name: migratedName,
-        cls: car.cls,
-        race: car.race,
-        note: typeof car.note === "string" ? car.note : "",
-        disliked: Boolean(car.disliked)
-      };
-    });
-    if(clean.length !== stored.length){
-      console.error(`Dropped ${stored.length - clean.length} invalid car entr${stored.length - clean.length === 1 ? "y" : "ies"} from storage.`);
+    }catch(error){
+      console.error("Garage operation failed", error);
+      setShareStatus("Couldn't finish this garage change. Your current work is still here.", "error", {persistent:true});
+      return false;
     }
-    cars = clean;
-    reseedCarIds(cars);
-    if(clean.length !== stored.length || anyMigrated || anyIdRepaired) save();
+  });
+  garageMutationQueue = queued;
+  return queued.finally(()=>{
+    garageMutationPending--;
+    if(!garageMutationPending) document.querySelector(".addrow")?.toggleAttribute("inert", false);
+  });
+}
+
+function storedCarCopy(car){
+  return {id:car.id, name:migrateOldYearFormat(car.name), cls:car.cls, race:car.race,
+    note:typeof car.note === "string" ? car.note : "", disliked:Boolean(car.disliked)};
+}
+function normalizeStoredGarage(value){
+  const valid = value.filter(isValidStoredCar);
+  const reserved = new Set(valid.filter(car=>Number.isSafeInteger(car.id) || (typeof car.id === "string" && car.id)).map(car=>String(car.id)));
+  const used = new Set();
+  return valid.map((car, index)=>{
+    let id = car.id;
+    if(!(Number.isSafeInteger(id) || (typeof id === "string" && id)) || used.has(String(id))){
+      id = "legacy-" + index;
+      while(reserved.has(String(id)) || used.has(String(id))) id += "-repair";
+    }
+    used.add(String(id));
+    return {...storedCarCopy(car), id};
+  });
+}
+function collectionConfig(kind){
+  return kind === "garage"
+    ? {head:GARAGE_HEAD_KEY, prefix:GARAGE_RECORD_PREFIX, legacy:STORE_KEY}
+    : {head:SPINS_HEAD_KEY, prefix:SPINS_RECORD_PREFIX, legacy:WHEELSPIN_OWNED_KEY};
+}
+function readCollection(kind, forceScan=false){
+  const config = collectionConfig(kind);
+  try{
+    const rawHead = localStorage.getItem(config.head);
+    const rawLegacy = rawHead === null ? localStorage.getItem(config.legacy) : null;
+    let state = kind === "garage" ? garageStorageState : spinsStorageState;
+    const unchangedBase = state && state.rawHead === rawHead && state.rawLegacy === rawLegacy;
+    if(unchangedBase){
+      if(!forceScan) return state;
+      // The immutable header is unchanged, but every active record still
+      // needs a fresh scan while holding the shared write lock.
+      state = {...state, records:new Map(), invalidRecords:new Set()};
+      if(state.baseReadable) storageRecoveryCollections.delete(kind);
+    }else{
+      let epoch = "legacy", base = [], baseReadable = true;
+      if(rawHead !== null){
+        const head = JSON.parse(rawHead);
+        if(!head || head.version !== 2 || typeof head.epoch !== "string" || !head.epoch || !Array.isArray(head.base)) throw new Error("invalid collection header");
+        epoch = head.epoch;
+        base = head.base;
+        storageRecoveryCollections.delete(kind);
+      }else if(rawLegacy){
+        try{
+          const parsed = JSON.parse(rawLegacy);
+          if(!Array.isArray(parsed)) throw new Error("invalid legacy collection");
+          base = parsed;
+          storageRecoveryCollections.delete(kind);
+        }catch(error){
+          baseReadable = false;
+          storageRecoveryCollections.add(kind);
+          console.error("Original stored data kept for recovery", error);
+          setShareStatus("Saved " + kind + " data couldn't be read. The original was kept for recovery.", "error", {persistent:true});
+        }
+      }
+      state = {kind, config, epoch, rawHead, rawLegacy, baseReadable,
+        base:kind === "garage" ? normalizeStoredGarage(base) : normalizeOwnedWheelspin(base), records:new Map(), invalidRecords:new Set()};
+    }
+    const prefix = config.prefix + state.epoch + ":";
+    for(let index=0; index<localStorage.length; index++){
+      const key = localStorage.key(index);
+      if(key?.startsWith(prefix)) readCollectionRecord(state, key.slice(prefix.length), localStorage.getItem(key));
+    }
+    if(kind === "garage") garageStorageState = state;
+    else spinsStorageState = state;
+    return state;
+  }catch(error){
+    storageRecoveryCollections.add(kind);
+    console.error("Storage read failed", error);
+    setShareStatus("Browser storage couldn't be read. Your current work is still available here.", "error", {persistent:true});
+    return null;
+  }
+}
+function readCollectionRecord(state, encodedId, raw){
+  try{
+    if(raw === null){ state.records.delete(encodedId); state.invalidRecords.delete(encodedId); return; }
+    decodeURIComponent(encodedId);
+    const value = JSON.parse(raw);
+    if(state.kind === "spins"){
+      if(typeof value !== "boolean") throw new Error("invalid Spins record");
+    }else if(!value || !(value.deleted === true || (isValidStoredCar(value.car) && String(value.car.id) === decodeURIComponent(encodedId)))){
+      throw new Error("invalid garage record");
+    }
+    state.records.set(encodedId, value);
+    state.invalidRecords.delete(encodedId);
+  }catch(error){
+    state.invalidRecords.add(encodedId);
+    storageRecoveryCollections.add(state.kind);
+    console.error("Invalid stored record kept for recovery", error);
+    setShareStatus("A saved record couldn't be read. The original was kept for recovery.", "error", {persistent:true});
+  }
+}
+function projectCollection(state){
+  if(state.kind === "spins"){
+    const result = new Set(normalizeOwnedWheelspin(state.base));
+    const records = new Map();
+    state.records.forEach((checked, encodedName)=>{
+      const storedName = decodeURIComponent(encodedName);
+      const name = canonicalWheelspinName(storedName);
+      const priority = storedName === name ? 1 : 0;
+      // Canonical true AND false records outrank an old spelling, regardless
+      // of localStorage enumeration order. An unchecked renamed car stays unchecked.
+      if(!records.has(name) || priority >= records.get(name).priority) records.set(name, {checked, priority});
+    });
+    records.forEach(({checked}, name)=>{ if(checked) result.add(name); else result.delete(name); });
+    return result;
+  }
+  const result = new Map(state.base.map((car,index)=>[String(car.id), {car:storedCarCopy(car), index}]));
+  state.records.forEach((record,encodedId)=>{
+    const id = decodeURIComponent(encodedId);
+    if(record.deleted) result.delete(id);
+    else result.set(id, {car:storedCarCopy(record.car), index:result.get(id)?.index ?? record.index ?? result.size});
+  });
+  return [...result.values()].sort((a,b)=>a.index-b.index || String(a.car.id).localeCompare(String(b.car.id))).map(record=>record.car);
+}
+function garageCarBytes(car){
+  const {id, ...backupCar} = storedCarCopy(car);
+  backupCar.name = completeYearFromFandomData(backupCar.name, fh6CarData);
+  return garageByteEncoder.encode(JSON.stringify(backupCar)).byteLength;
+}
+function acceptGarageBaseline(value){
+  const previous = garageBaseline;
+  const sameCarData = garageBaselineCarData === fh6CarData;
+  garageBaselineBytes = 0;
+  garageBaseline = new Map(value.map(car=>{
+    const id = String(car.id);
+    const cached = previous.get(id);
+    const record = sameCarData && cached && cached.car.id === car.id && GARAGE_FIELDS.every(field=>cached.car[field] === car[field])
+      ? cached : {car:storedCarCopy(car), bytes:garageCarBytes(car)};
+    garageBaselineBytes += record.bytes;
+    return [id, record];
+  }));
+  garageBaselineCarData = fh6CarData;
+  garageBaselineEpoch = garageStorageState?.epoch || "legacy";
+}
+function garageChanges(changedIds){
+  const selected = changedIds ? new Set([...changedIds, ...unsavedGarageIds].map(String)) : null;
+  const current = new Map(cars.map((car,index)=>[String(car.id), {car, index}]));
+  const ids = selected || new Set([...garageBaseline.keys(), ...current.keys()]);
+  const changes = [];
+  ids.forEach(id=>{
+    const before = garageBaseline.get(id)?.car;
+    const after = current.get(id);
+    if(!after && before) changes.push({id, deleted:true});
+    else if(after && (!before || GARAGE_FIELDS.some(field=>after.car[field] !== before[field]))) changes.push({id, car:storedCarCopy(after.car), index:after.index});
+  });
+  return changes;
+}
+function approximateBackupBytes(changes=[], owned=ownedWheelspinCars){
+  if(garageBaselineCarData !== fh6CarData){
+    garageBaselineBytes = 0;
+    garageBaseline.forEach(record=>{
+      record.bytes = garageCarBytes(record.car);
+      garageBaselineBytes += record.bytes;
+    });
+    garageBaselineCarData = fh6CarData;
+  }
+  let bytes = garageBaselineBytes, count = garageBaseline.size;
+  changes.forEach(change=>{
+    const before = garageBaseline.get(change.id);
+    if(before){ bytes -= before.bytes; count--; }
+    if(!change.deleted){ bytes += garageCarBytes(change.car); count++; }
+  });
+  const envelope = garageByteEncoder.encode(JSON.stringify({format:"fh6-setup", version:1, exportedAt:new Date().toISOString(), cars:[], ownedWheelspin:[]})).byteLength;
+  const names = [...owned];
+  return envelope + bytes + Math.max(0,count-1) + names.reduce((sum,name)=>sum + garageByteEncoder.encode(JSON.stringify(name)).byteLength,0) + Math.max(0,names.length-1);
+}
+function collectionEpochMatches(state){
+  return localStorage.getItem(state.config.head) === state.rawHead;
+}
+function cleanupOldCollectionRecords(state){
+  // An epoch is never reused. Records only appear after its atomic header
+  // commit, so an inactive record can never become active again.
+  try{
+    const keys = [];
+    for(let index=0; index<localStorage.length; index++){
+      const key = localStorage.key(index);
+      if(key?.startsWith(state.config.prefix) && !key.startsWith(state.config.prefix + state.epoch + ":")) keys.push(key);
+    }
+    keys.forEach(key=>{
+      const raw = localStorage.getItem(state.config.head);
+      const epoch = raw === null ? "legacy" : JSON.parse(raw).epoch;
+      if(!key.startsWith(state.config.prefix + epoch + ":")) localStorage.removeItem(key);
+    });
+  }catch(error){ console.error("Old record cleanup deferred", error); }
+}
+function load(){
+  const state = readCollection("garage", true);
+  if(state){
+    cars = projectCollection(state);
+    acceptGarageBaseline(cars);
+    cleanupOldCollectionRecords(state);
   }
   renderAll();
 }
@@ -3276,26 +3619,249 @@ function persist(key, value, what){
     return true;
   }catch(e){
     console.error("storage error", e);
-    setShareStatus(`Couldn't save ${what} — browser storage is full or blocked.`, "error");
+    setShareStatus("Couldn't save " + what + ". Browser storage is full or blocked. Your unsaved work is still here.", "error", {persistent:true});
     return false;
   }
 }
 
-function save(){
-  persist(STORE_KEY, cars, "your garage");
-}
-
-function loadOwnedWheelspinCars(){
+function save(options={}){
+  const state = readCollection("garage") || (options.replace ? {config:collectionConfig("garage")} : null);
+  if(!state) return false;
+  if(options.replace){
+    const replacement = (options.cars || cars).map(storedCarCopy);
+    if(new Blob([serializeSetupFile(replacement, ownedWheelspinCars)]).size > MAX_SETUP_BYTES){
+      setShareStatus("This garage is too large for a 5 MB backup. Reduce the notes or number of cars first.", "error", {persistent:true});
+      return false;
+    }
+    const head = {version:2, epoch:mintCarId(), base:replacement};
+    if(!persist(state.config.head, head, "your garage")) return false;
+    garageStorageState = null;
+    const accepted = readCollection("garage", true);
+    if(!accepted || accepted.epoch !== head.epoch){
+      setShareStatus("Another tab replaced the garage. Your current work is still here.", "error", {persistent:true});
+      return false;
+    }
+    cars = projectCollection(accepted);
+    acceptGarageBaseline(cars);
+    unsavedGarageIds.clear();
+    garageDraftConflicts.clear();
+    cleanupOldCollectionRecords(accepted);
+    clearPersistenceWarning();
+    return true;
+  }
+  const changes = garageChanges(options.changedIds);
+  if(!changes.length){
+    unsavedGarageIds.clear();
+    garageDraftConflicts.clear();
+    clearPersistenceWarning();
+    return true;
+  }
+  changes.forEach(change=>unsavedGarageIds.add(change.id));
+  if(changes.some(change=>garageDraftConflicts.has(change.id) && options.resolvedConflictId !== change.id)){
+    setShareStatus("An unsaved car also changed in another tab. Your draft is still here. Edit that car and Save to resolve it, or cancel the edit to keep the saved version.", "error", {persistent:true});
+    return false;
+  }
+  if(approximateBackupBytes(changes) > MAX_SETUP_BYTES){
+    setShareStatus("This garage is too large for a 5 MB backup. Reduce the notes or number of cars first.", "error", {persistent:true});
+    return false;
+  }
   try{
-    const stored = JSON.parse(localStorage.getItem(WHEELSPIN_OWNED_KEY) || "[]");
-    ownedWheelspinCars = new Set(normalizeOwnedWheelspin(stored));
+    if(state.epoch !== garageBaselineEpoch) throw new Error("garage replaced");
+    if(!collectionEpochMatches(state)) throw new Error("garage replaced");
+    for(const change of changes){
+      const encodedId = encodeURIComponent(change.id);
+      readCollectionRecord(state, encodedId, localStorage.getItem(state.config.prefix + state.epoch + ":" + encodedId));
+      if(state.invalidRecords.has(encodedId)){
+        setShareStatus("This car's saved record is damaged. The original was kept for recovery. Export your draft, then import a valid backup or reset the garage to replace the damaged data.", "error", {persistent:true});
+        return false;
+      }
+    }
+    for(const change of changes){
+      const encodedId = encodeURIComponent(change.id);
+      const key = state.config.prefix + state.epoch + ":" + encodedId;
+      const isInBase = state.base.some(car=>String(car.id) === change.id);
+      if(change.deleted && !isInBase){
+        localStorage.removeItem(key);
+        state.records.delete(encodedId);
+      }else{
+        if(!persist(key, change, "your garage")) return false;
+        state.records.set(encodedId, change);
+      }
+      if(!collectionEpochMatches(state)) throw new Error("garage replaced");
+      const before = garageBaseline.get(change.id);
+      if(before){ garageBaselineBytes -= before.bytes; garageBaseline.delete(change.id); }
+      if(!change.deleted){
+        const record = {car:storedCarCopy(change.car), bytes:garageCarBytes(change.car)};
+        garageBaseline.set(change.id, record);
+        garageBaselineBytes += record.bytes;
+      }
+      unsavedGarageIds.delete(change.id);
+      garageDraftConflicts.delete(change.id);
+    }
+    if(!unsavedGarageIds.size) clearPersistenceWarning();
+    return true;
   }catch(error){
-    ownedWheelspinCars = new Set();
+    console.error("Garage commit failed", error);
+    setShareStatus("The garage changed in another tab or couldn't be saved. Your unsaved work is still here.", "error", {persistent:true});
+    return false;
   }
 }
 
-function saveOwnedWheelspinCars(){
-  persist(WHEELSPIN_OWNED_KEY, [...ownedWheelspinCars], "your Spins & Unlocks progress");
+function loadOwnedWheelspinCars(){
+  const state = readCollection("spins", true);
+  if(state){
+    ownedWheelspinCars = projectCollection(state);
+    ownedWheelspinBaseline = new Set(ownedWheelspinCars);
+    ownedWheelspinBaselineEpoch = state.epoch;
+    cleanupOldCollectionRecords(state);
+  }
+}
+function saveOwnedWheelspinCars(options={}){
+  spinsSaveFailed = true;
+  const state = readCollection("spins") || (options.replace ? {config:collectionConfig("spins")} : null);
+  if(!state) return false;
+  const wanted = new Set(normalizeOwnedWheelspin([...(options.value || ownedWheelspinCars)]));
+  if(!options.replace) ownedWheelspinCars = wanted;
+  if(approximateBackupBytes(garageChanges(unsavedGarageIds), wanted) > MAX_SETUP_BYTES){
+    setShareStatus("This collection is too large for a 5 MB backup.", "error", {persistent:true});
+    return false;
+  }
+  if(options.replace){
+    const head = {version:2, epoch:mintCarId(), base:[...wanted]};
+    if(!persist(state.config.head, head, "your Spins & Unlocks progress")) return false;
+    spinsStorageState = null;
+    const accepted = readCollection("spins", true);
+    if(!accepted || accepted.epoch !== head.epoch){
+      setShareStatus("Another tab replaced the Spins checklist. Your current work is still here.", "error", {persistent:true});
+      return false;
+    }
+    ownedWheelspinCars = projectCollection(accepted);
+    ownedWheelspinBaseline = new Set(ownedWheelspinCars);
+    ownedWheelspinBaselineEpoch = accepted.epoch;
+    spinsSaveFailed = false;
+    cleanupOldCollectionRecords(accepted);
+    clearPersistenceWarning();
+    return true;
+  }
+  const changes = [...new Set([...wanted, ...ownedWheelspinBaseline])]
+    .filter(name=>wanted.has(name) !== ownedWheelspinBaseline.has(name));
+  try{
+    if(state.epoch !== ownedWheelspinBaselineEpoch) throw new Error("Spins checklist replaced");
+    if(!collectionEpochMatches(state)) throw new Error("Spins checklist replaced");
+    for(const name of changes){
+      const encodedName = encodeURIComponent(name);
+      const raw = localStorage.getItem(state.config.prefix + state.epoch + ":" + encodedName);
+      if(raw !== null) readCollectionRecord(state, encodedName, raw);
+      if(state.invalidRecords?.has(encodedName)){
+        setShareStatus("This saved Spins record is damaged. The original was kept for recovery. Import a backup to replace it explicitly.", "error", {persistent:true});
+        return false;
+      }
+    }
+    for(const name of changes){
+      const encodedName = encodeURIComponent(name);
+      const checked = wanted.has(name);
+      const key = state.config.prefix + state.epoch + ":" + encodedName;
+      if(!checked && !state.base.includes(name) && !WHEELSPIN_ALIASED_NAMES.has(name)){
+        localStorage.removeItem(key);
+        state.records.delete(encodedName);
+      }else{
+        if(!persist(key, checked, "your Spins & Unlocks progress")) return false;
+        state.records.set(encodedName, checked);
+      }
+      if(!collectionEpochMatches(state)) throw new Error("Spins checklist replaced");
+      if(checked) ownedWheelspinBaseline.add(name); else ownedWheelspinBaseline.delete(name);
+    }
+    spinsSaveFailed = false;
+    clearPersistenceWarning();
+    return true;
+  }catch(error){
+    console.error("Spins commit failed", error);
+    setShareStatus("The Spins checklist changed in another tab or couldn't be saved. Your unsaved work is still here.", "error", {persistent:true});
+    return false;
+  }
+}
+
+function refreshSharedCollections(keys, options={}){
+  const changed = kind=>{
+    const config = collectionConfig(kind);
+    return keys.has(null) || [...keys].some(key=>key === config.head || key === config.legacy || key?.startsWith(config.prefix));
+  };
+  if(changed("garage")){
+    const draft = garageChanges();
+    const state = readCollection("garage", keys.has(null));
+    if(state){
+      const prefix = state.config.prefix + state.epoch + ":";
+      keys.forEach(key=>{ if(key?.startsWith(prefix)) readCollectionRecord(state, key.slice(prefix.length), localStorage.getItem(key)); });
+      if(state.epoch !== garageBaselineEpoch && draft.length){
+        draft.forEach(change=>unsavedGarageIds.add(change.id));
+        setShareStatus("Another tab replaced the garage. Export your unsaved work before reloading.", "error", {persistent:true});
+      }else{
+        const committed = projectCollection(state);
+        if(state.epoch !== garageBaselineEpoch) hideUndoToast();
+        const previousBaseline = garageBaseline;
+        acceptGarageBaseline(committed);
+        const merged = new Map(committed.map(car=>[String(car.id), car]));
+        draft.forEach(change=>{
+          if(change.deleted) merged.delete(change.id);
+          else{
+            const before = previousBaseline.get(change.id)?.car;
+            const latest = merged.get(change.id);
+            if(before && latest){
+              const fields = GARAGE_FIELDS.filter(field=>change.car[field] !== before[field]);
+              const previousConflicts = garageDraftConflicts.get(change.id) || new Set();
+              const conflicts = fields.filter(field=>latest[field] !== change.car[field]
+                && (previousConflicts.has(field) || latest[field] !== before[field]));
+              if(conflicts.length) garageDraftConflicts.set(change.id, new Set(conflicts));
+              else garageDraftConflicts.delete(change.id);
+              merged.set(change.id, {...latest, ...Object.fromEntries(fields.map(field=>[field, change.car[field]]))});
+            }else{
+              if(before && !latest) garageDraftConflicts.set(change.id, new Set(["removed"]));
+              merged.set(change.id, storedCarCopy(change.car));
+            }
+          }
+        });
+        cars = [...merged.values()];
+        if(options.render !== false) renderAll();
+      }
+    }
+  }
+  if(changed("spins")){
+    const added = [...ownedWheelspinCars].filter(name=>!ownedWheelspinBaseline.has(name));
+    const removed = [...ownedWheelspinBaseline].filter(name=>!ownedWheelspinCars.has(name));
+    const state = readCollection("spins", keys.has(null));
+    if(state){
+      const prefix = state.config.prefix + state.epoch + ":";
+      keys.forEach(key=>{ if(key?.startsWith(prefix)) readCollectionRecord(state, key.slice(prefix.length), localStorage.getItem(key)); });
+      if(state.epoch !== ownedWheelspinBaselineEpoch && (added.length || removed.length)){
+        spinsSaveFailed = true;
+        setShareStatus("Another tab replaced the Spins checklist. Export your unsaved work before reloading.", "error", {persistent:true});
+      }else{
+        ownedWheelspinCars = projectCollection(state);
+        ownedWheelspinBaseline = new Set(ownedWheelspinCars);
+        ownedWheelspinBaselineEpoch = state.epoch;
+        added.forEach(name=>ownedWheelspinCars.add(name));
+        removed.forEach(name=>ownedWheelspinCars.delete(name));
+        renderSuperWheelspinCars();
+      }
+    }
+  }
+}
+let storageRefreshTimer = 0;
+const pendingStorageKeys = new Set();
+if(typeof window !== "undefined"){
+  window.addEventListener("storage", event=>{
+    if(event.storageArea && event.storageArea !== localStorage) return;
+    const key = event.key;
+    if(key !== null && key !== STORE_KEY && key !== WHEELSPIN_OWNED_KEY && key !== GARAGE_HEAD_KEY && key !== SPINS_HEAD_KEY
+      && !key?.startsWith(GARAGE_RECORD_PREFIX) && !key?.startsWith(SPINS_RECORD_PREFIX)) return;
+    pendingStorageKeys.add(key);
+    clearTimeout(storageRefreshTimer);
+    storageRefreshTimer = setTimeout(()=>{
+      const keys = new Set(pendingStorageKeys);
+      pendingStorageKeys.clear();
+      refreshSharedCollections(keys);
+    }, 48);
+  });
 }
 
 function loadCollapsedSpinBrands(){
@@ -3325,7 +3891,11 @@ function applySpinGroupCollapseState(section, brand, collapsed){
     heading.setAttribute("aria-expanded", String(!collapsed));
     heading.setAttribute("aria-label", `${collapsed ? "Expand" : "Collapse"} ${brand}`);
   }
-  if(body) body.setAttribute("aria-hidden", String(collapsed));
+  if(body){
+    if(collapsed && body.contains(document.activeElement)) heading?.focus();
+    body.setAttribute("aria-hidden", String(collapsed));
+    body.toggleAttribute("inert", collapsed);
+  }
 }
 
 function findRenderedSpinGroup(brand){
@@ -3361,6 +3931,7 @@ function setAllSpinBrandsCollapsed(collapsed){
 }
 
 function toggleOwnedWheelspinCar(car){
+  car = canonicalWheelspinName(car);
   if(ownedWheelspinCars.has(car)) ownedWheelspinCars.delete(car);
   else ownedWheelspinCars.add(car);
   saveOwnedWheelspinCars();
@@ -3368,7 +3939,7 @@ function toggleOwnedWheelspinCar(car){
   // all, so the list genuinely has to be rebuilt. Under "All" -- the default,
   // and where rapid check-off actually happens -- the only things that change
   // are this one row, its brand's struck-through state, and the header count.
-  // Rebuilding all 142 rows (every element, every listener) for that is waste
+  // Rebuilding every row (every element, every listener) for that is waste
   // that grows with the list; this path touches a fixed handful of nodes.
   if(wheelspinCollectionFilter !== "all"){
     renderSuperWheelspinCars();
@@ -3468,17 +4039,32 @@ function uncheckAllVisibleWheelspinCars(){
 }
 
 let shareStatusTimer = 0;
-function setShareStatus(message, state=""){
+let persistentShareWarning = "";
+function clearPersistenceWarning(){
+  if(unsavedGarageIds.size || spinsSaveFailed || storageRecoveryCollections.size) return;
+  persistentShareWarning = "";
+  setShareStatus("");
+}
+function setShareStatus(message, state="", options={}){
   const status = document.getElementById("shareStatus");
   clearTimeout(shareStatusTimer);
+  if(options.persistent) persistentShareWarning = message;
+  else if(persistentShareWarning){
+    message = message ? message + " " + persistentShareWarning : persistentShareWarning;
+    state = "error";
+  }
+  if(garageWriteSafetyWarning){
+    message = message ? message + " " + garageWriteSafetyWarning : garageWriteSafetyWarning;
+    state = "error";
+  }
   status.textContent = message;
   status.dataset.state = state;
   if(!message){ status.classList.remove("show"); return; }
   status.classList.add("show");
-  shareStatusTimer = setTimeout(()=>status.classList.remove("show"), 2600);
+  if(!persistentShareWarning && !garageWriteSafetyWarning) shareStatusTimer = setTimeout(()=>status.classList.remove("show"), 4200);
 }
 
-function createSetupFilePayload(){
+function createSetupFilePayload(garage=cars, owned=ownedWheelspinCars){
   return {
     format:"fh6-setup",
     version:1,
@@ -3489,7 +4075,7 @@ function createSetupFilePayload(){
     // fetch is still in flight -- still comes out in the current
     // "YEAR Model" shape instead of freezing in whatever half-migrated
     // state `cars` happened to be in at that exact moment.
-    cars:cars.map(car=>{
+    cars:garage.map(car=>{
       const migratedName = migrateOldYearFormat(String(car.name || ""));
       const completedName = completeYearFromFandomData(migratedName, fh6CarData);
       return {
@@ -3500,13 +4086,20 @@ function createSetupFilePayload(){
         disliked:Boolean(car.disliked)
       };
     }),
-    ownedWheelspin:[...ownedWheelspinCars]
+    ownedWheelspin:normalizeOwnedWheelspin([...owned])
   };
+}
+function serializeSetupFile(garage=cars, owned=ownedWheelspinCars){
+  return JSON.stringify(createSetupFilePayload(garage, owned));
 }
 
 function exportSetupFile(){
-  const contents = JSON.stringify(createSetupFilePayload(), null, 2);
+  const contents = serializeSetupFile();
   const blob = new Blob([contents], {type:"text/plain;charset=utf-8"});
+  if(blob.size > MAX_SETUP_BYTES){
+    setShareStatus("This backup exceeds 5 MB. Reduce the notes or number of cars before exporting.", "error");
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   const date = new Date().toISOString().slice(0, 10);
@@ -3520,6 +4113,7 @@ function exportSetupFile(){
 }
 
 let pendingWheelspinImport = null;
+let setupImportSequence = 0;
 
 async function importSetupFile(){
   const input = document.getElementById("setupFileInput");
@@ -3528,20 +4122,28 @@ async function importSetupFile(){
     setShareStatus("Choose a backup file first.", "error");
     return;
   }
+  const sequence = ++setupImportSequence;
+  dismissPendingWheelspinImport();
 
   try{
     if(file.size > MAX_SETUP_BYTES) throw new Error("invalid setup file");
     const contents = (await file.text()).replace(/^\uFEFF/, "");
+    if(sequence !== setupImportSequence) return;
+    if(new Blob([contents]).size > MAX_SETUP_BYTES) throw new Error("invalid setup file");
     const payload = JSON.parse(contents);
     if(payload.format && payload.format !== "fh6-setup") throw new Error("invalid setup file");
     const importedCars = normalizeSharedSetup(payload);
     const importedOwnedWheelspin = normalizeOwnedWheelspin(payload.ownedWheelspin);
+    const hasOwnedWheelspin = Object.prototype.hasOwnProperty.call(payload, "ownedWheelspin");
+    if(hasOwnedWheelspin && !Array.isArray(payload.ownedWheelspin)) throw new Error("invalid setup file");
+    await runGarageMutation(()=>{
+    if(sequence !== setupImportSequence) return;
+    if(!save({replace:true, cars:importedCars})) return;
 
     // The pending Undo refers to a car in the garage being replaced -- it no
     // longer makes sense once a different set of cars is loaded.
     hideUndoToast();
     leaveCarEditMode(false);
-    cars = importedCars;
     filterRace = "";
     filterClass = "";
     const raceFilter = document.getElementById("fRace");
@@ -3550,34 +4152,35 @@ async function importSetupFile(){
     classFilter.value = "";
     syncCustomSelect(raceFilter);
     syncCustomSelect(classFilter);
-    save();
+    resetGaragePage();
     renderAll();
     setShareStatus("Backup imported.", "success");
 
-    // The garage itself is always replaced above. Super Wheelspin progress is
-    // account-specific, so it's only ever touched if the person says yes here --
-    // and if this file has none to offer, we don't even ask.
-    if(importedOwnedWheelspin.length){
+    // An explicit empty checklist is also a restorable snapshot. Older files
+    // without this field leave the current checklist alone.
+    if(hasOwnedWheelspin){
       pendingWheelspinImport = importedOwnedWheelspin;
       const count = importedOwnedWheelspin.length;
       document.getElementById("wheelspinImportSub").textContent =
-        `This backup also includes ${count} checked Super Wheelspin car${count === 1 ? "" : "s"}.`;
+        count ? `This backup includes ${count} checked car${count === 1 ? "" : "s"}. Replace your Spins checklist too?`
+              : "This backup has no checked cars. Replace your Spins checklist with this empty one?";
       showOverlay("wheelspinImportOverlay", "wheelspinImportYes");
     }
+    });
   }catch(error){
-    setShareStatus("Invalid backup file.", "error");
+    if(sequence === setupImportSequence) setShareStatus(error?.name === "NotReadableError" ? "The backup couldn't be read. Choose it again." : "Invalid backup file.", "error");
   }finally{
     // Clearing the native file input lets selecting the exact same backup
     // again fire a new change event (browsers otherwise keep the old value).
-    input.value = "";
+    if(sequence === setupImportSequence) input.value = "";
   }
 }
 
 function applyPendingWheelspinImport(){
   if(pendingWheelspinImport){
-    ownedWheelspinCars = new Set(pendingWheelspinImport);
-    saveOwnedWheelspinCars();
+    if(!saveOwnedWheelspinCars({replace:true, value:pendingWheelspinImport})) return;
     renderSuperWheelspinCars();
+    setShareStatus("Spins checklist imported.", "success");
   }
   pendingWheelspinImport = null;
   hideOverlay("wheelspinImportOverlay");
@@ -3590,25 +4193,22 @@ function dismissPendingWheelspinImport(){
 
 function normalizeOwnedWheelspin(value){
   if(!Array.isArray(value)) return [];
-  return [...new Set(value.filter(item => typeof item === "string" && item.length <= 200))].slice(0, 2000);
+  return [...new Set(value.filter(item => typeof item === "string").map(canonicalWheelspinName))];
 }
 
 function normalizeSharedSetup(payload){
   if(!payload || typeof payload !== "object") throw new Error("invalid setup");
 
   const rawCars = payload.version === 1 && Array.isArray(payload.cars) ? payload.cars : null;
-  // A zero-car payload used to be accepted and would silently wipe the whole
-  // garage -- indistinguishable, from the outside, from a successful import.
-  // A backup with no cars in it is not something anyone means to restore.
-  if(!rawCars || !rawCars.length || rawCars.length > 5000) throw new Error("invalid setup");
+  if(!rawCars) throw new Error("invalid setup");
 
-  return rawCars.map((car)=>{
+  // Validate the entire file before allocating ids or changing any state.
+  const validated = rawCars.map((car)=>{
     if(!car || typeof car !== "object") throw new Error("invalid setup");
-    if(typeof car.name !== "string" || !car.name.trim() || car.name.length > 500) throw new Error("invalid setup");
+    if(typeof car.name !== "string" || !car.name.trim()) throw new Error("invalid setup");
     if(!CLASS_ORDER.includes(car.cls) || !RACE_ORDER.includes(car.race)) throw new Error("invalid setup");
-    if(typeof car.note !== "string" || car.note.length > 2000) throw new Error("invalid setup");
+    if(typeof car.note !== "string") throw new Error("invalid setup");
     return {
-      id:mintCarId(),
       name:car.name.trim(),
       cls:car.cls,
       race:car.race,
@@ -3616,6 +4216,7 @@ function normalizeSharedSetup(payload){
       disliked:Boolean(car.disliked)
     };
   });
+  return validated.map(car=>({id:mintCarId(), ...car}));
 }
 
 function fillSelect(sel, opts, withAll, allLabel){
@@ -3643,6 +4244,9 @@ function syncCustomSelect(select){
   if(!wrapper) return;
   const selected = select.options[select.selectedIndex];
   wrapper.querySelector(".custom-select-value").textContent = selected ? selected.textContent : "";
+  const trigger = wrapper.querySelector(".custom-select-trigger");
+  trigger.setAttribute("aria-label", `${wrapper.dataset.label || "Select option"}: ${selected?.textContent || "No selection"}`);
+  trigger.disabled = select.disabled;
   wrapper.querySelectorAll(".custom-select-option").forEach(option=>{
     option.setAttribute("aria-selected", String(option.dataset.value === select.value));
   });
@@ -3664,6 +4268,7 @@ function enhanceSelect(select){
   const wrapper = document.createElement("div");
   wrapper.className = "custom-select";
   wrapper.dataset.selectId = select.id;
+  wrapper.dataset.label = resolvedLabel || "Select option";
   select.parentNode.insertBefore(wrapper, select);
   wrapper.appendChild(select);
   select.tabIndex = -1;
@@ -3679,12 +4284,14 @@ function enhanceSelect(select){
   trigger.setAttribute("aria-haspopup", "listbox");
   trigger.setAttribute("aria-expanded", "false");
   trigger.setAttribute("aria-label", resolvedLabel || "Select option");
+  trigger.setAttribute("aria-controls", `${select.id}-options`);
   const value = document.createElement("span");
   value.className = "custom-select-value";
   trigger.appendChild(value);
 
   const menu = document.createElement("div");
   menu.className = "custom-select-menu";
+  menu.id = `${select.id}-options`;
   menu.setAttribute("role", "listbox");
   menu.setAttribute("aria-label", resolvedLabel || "Options");
 
@@ -3695,6 +4302,8 @@ function enhanceSelect(select){
     option.dataset.value = nativeOption.value;
     option.textContent = nativeOption.textContent;
     option.setAttribute("role", "option");
+    option.tabIndex = -1;
+    option.disabled = nativeOption.disabled;
     option.onclick = ()=>{
       select.value = nativeOption.value;
       select.dispatchEvent(new Event("change", {bubbles:true}));
@@ -3705,12 +4314,26 @@ function enhanceSelect(select){
     menu.appendChild(option);
   });
 
+  const enabledOptions = ()=>[...menu.querySelectorAll(".custom-select-option:not(:disabled)")];
+  function focusOption(index){
+    const options = enabledOptions();
+    const option = options[Math.max(0, Math.min(index, options.length - 1))];
+    option?.focus();
+    option?.scrollIntoView({block:"nearest", inline:"nearest"});
+  }
+  function openMenu(){
+    closeCustomSelects(wrapper);
+    wrapper.classList.add("is-open");
+    trigger.setAttribute("aria-expanded", "true");
+    refreshCustomSelectLayer();
+    const options = enabledOptions();
+    const index = options.findIndex(option=>option.dataset.value === select.value);
+    focusOption(index < 0 ? 0 : index);
+  }
   trigger.onclick = ()=>{
     const willOpen = !wrapper.classList.contains("is-open");
-    closeCustomSelects(wrapper);
-    wrapper.classList.toggle("is-open", willOpen);
-    trigger.setAttribute("aria-expanded", String(willOpen));
-    refreshCustomSelectLayer();
+    if(willOpen) openMenu();
+    else closeCustomSelects();
   };
   trigger.onkeydown = (event)=>{
     if(event.key === "Escape"){
@@ -3719,18 +4342,45 @@ function enhanceSelect(select){
       refreshCustomSelectLayer();
       return;
     }
-    if((event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") && !wrapper.classList.contains("is-open")){
+    if(["ArrowDown","ArrowUp","Enter"," "].includes(event.key)){
       event.preventDefault();
-      trigger.click();
+      openMenu();
     }
   };
+  let typeahead = "", typedAt = 0;
   menu.onkeydown = (event)=>{
     if(event.key === "Escape"){
       event.preventDefault();
       closeCustomSelects();
       trigger.focus();
+      return;
     }
+    const options = enabledOptions();
+    const current = options.indexOf(document.activeElement);
+    let next = -1;
+    if(event.key === "ArrowDown") next = (current + 1) % options.length;
+    else if(event.key === "ArrowUp") next = (current - 1 + options.length) % options.length;
+    else if(event.key === "Home") next = 0;
+    else if(event.key === "End") next = options.length - 1;
+    else if(event.key === "Enter" || event.key === " "){
+      event.preventDefault();
+      if(current >= 0) options[current].click();
+      return;
+    }else if(event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey){
+      const now = Date.now();
+      typeahead = now - typedAt > 600 ? event.key : typeahead + event.key;
+      typedAt = now;
+      next = options.findIndex(option=>option.textContent.toLowerCase().startsWith(typeahead.toLowerCase()));
+    }
+    if(next >= 0){ event.preventDefault(); focusOption(next); }
   };
+  wrapper.addEventListener("focusout", event=>{
+    if(!wrapper.contains(event.relatedTarget)){
+      wrapper.classList.remove("is-open");
+      trigger.setAttribute("aria-expanded", "false");
+      refreshCustomSelectLayer();
+    }
+  });
 
   wrapper.appendChild(trigger);
   wrapper.appendChild(menu);
@@ -3746,33 +4396,47 @@ function splitWikiTemplateArgs(template){
   return template.slice(2, -2).split("|");
 }
 
+const FH6_CAR_FETCH_TIMEOUT_MS = 10000;
+const FH6_CAR_REVISION_TIMEOUT_MS = 4000;
+
+async function fetchFh6Json(url, timeoutMs){
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), timeoutMs);
+  try{
+    const res = await fetch(url, {signal:controller.signal});
+    if(!res.ok) throw new Error("Fandom API returned " + res.status);
+    return await res.json();
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
 // Returns the wiki page's current revision id, or null on any failure
 // (network error, unexpected shape, page not found) -- a null result just
 // means the caller can't confirm freshness this way and should fall back
 // to actually fetching, never that the data is known-stale.
 async function fetchFh6CarRevisionId(){
   try{
-    const res = await fetch(FH6_CAR_REVISION_API_URL);
-    if(!res.ok) return null;
-    const data = await res.json();
+    const data = await fetchFh6Json(FH6_CAR_REVISION_API_URL, FH6_CAR_REVISION_TIMEOUT_MS);
     const page = Object.values(data?.query?.pages || {})[0];
     const revisionId = page?.revisions?.[0]?.revid;
-    return typeof revisionId === "number" ? revisionId : null;
+    return Number.isSafeInteger(revisionId) && revisionId > 0 ? revisionId : null;
   }catch(e){
     return null;
   }
 }
 
 async function fetchFh6CarData(){
-  const res = await fetch(FH6_CAR_API_URL);
-  if(!res.ok) throw new Error("Fandom API returned " + res.status);
-
-  const data = await res.json();
+  // Content and revision must describe the same snapshot. A separate revision
+  // lookup can observe an edit that happened while this response was in flight.
+  const url = new URL(FH6_CAR_API_URL);
+  url.searchParams.set("prop", "wikitext|revid");
+  const data = await fetchFh6Json(url.toString(), FH6_CAR_FETCH_TIMEOUT_MS);
   const wikiText = data?.parse?.wikitext?.["*"];
   if(typeof wikiText !== "string") throw new Error("Fandom API response did not include wikitext");
 
-  const mainCarsSection = wikiText.split("===Unobtainable===")[0];
-  const rawMatches = [...mainCarsSection.matchAll(/\{\{CarListStatsFH6\|[^}]+\}\}/g)];
+  const mainCarsSection = wikiText.split(/^===\s*Unobtainable\s*===\s*$/im)[0];
+  const rawMatches = [...mainCarsSection.matchAll(/\{\{\s*CarListStatsFH6\s*\|[^{}]+\}\}/g)];
 
   // parts[1] is the canonical name and the one that carries every real
   // distinguishing detail -- "Forza Edition", "RF", "GT-Four ST205", etc.
@@ -3811,14 +4475,21 @@ async function fetchFh6CarData(){
       const model = rawName.replace(/\s\(\d{4}\)$/, "").trim();
       const year = (parts[3] || "").trim();
       const name = year && /^\d{4}$/.test(year) ? `${year} ${model}` : model;
+      const pi = (parts[13] || "").trim();
       return {
         name: name.trim(),
-        rating: classFromPi((parts[13] || "").trim())
+        rating: pi ? classFromPi(pi) : ""
       };
     })
-    .filter(car => car.name);
+    .filter(car => car.name && car.name.length <= 500);
 
-  return [...new Map(cars.map(car => [car.name, car])).values()];
+  const uniqueCars = [...new Map(cars.map(car => [car.name, car])).values()];
+  if(!uniqueCars.length || uniqueCars.length > 5000) throw new Error("Fandom API did not include a usable car list");
+  const revisionId = data?.parse?.revid;
+  return {
+    cars:uniqueCars,
+    revisionId:Number.isSafeInteger(revisionId) && revisionId > 0 ? revisionId : null
+  };
 }
 
 // Best-effort year completion for garage cars whose stored name has no
@@ -3856,7 +4527,9 @@ function completeYearFromFandomData(name, fandomCars){
 // or blocked by CORS from a file:// origin -- is left exactly as it was.
 function completeMissingYearsFromFandomData(){
   if(!Array.isArray(fh6CarData) || fh6CarData.length === 0) return;
+  return runGarageMutation(()=>{
   let anyCompleted = false;
+  let editingNameCompletion = null;
   cars = cars.map(car=>{
     const completedName = completeYearFromFandomData(car.name, fh6CarData);
     if(completedName !== car.name){
@@ -3867,16 +4540,27 @@ function completeMissingYearsFromFandomData(){
       // name with the stale, pre-migration text still sitting in the
       // field (the user never touched it, so they'd have no idea).
       if(car.id === editingCarId){
-        const nameInput = document.getElementById("newName");
-        if(nameInput) nameInput.value = completedName;
+        editingNameCompletion = {id:car.id, previous:car.name, completed:completedName};
       }
     }
     return completedName === car.name ? car : {...car, name: completedName};
   });
   if(anyCompleted){
-    save();
+    const saved = save();
+    if(saved !== false && editingNameCompletion?.id === editingCarId){
+      // This same-tab migration is part of the edit baseline, even if the
+      // person has typed a different name. It is not a concurrent edit.
+      if(editingCarSnapshot?.name === editingNameCompletion.previous){
+        editingCarSnapshot.name = editingNameCompletion.completed;
+      }
+      const nameInput = document.getElementById("newName");
+      if(nameInput?.value === editingNameCompletion.previous){
+        nameInput.value = editingNameCompletion.completed;
+      }
+    }
     renderList();
   }
+  });
 }
 
 function loadCachedFh6CarData(){
@@ -3884,22 +4568,26 @@ function loadCachedFh6CarData(){
     const raw = localStorage.getItem(FH6_CAR_DATA_CACHE_KEY);
     if(!raw) return null;
     const parsed = JSON.parse(raw);
-    if(!parsed || !Array.isArray(parsed.cars) || typeof parsed.fetchedAt !== "number" || parsed.cars.length > 5000) return null;
+    if(!parsed || !Array.isArray(parsed.cars) || !Number.isFinite(parsed.fetchedAt) || parsed.cars.length > 5000) return null;
     const cachedCars = parsed.cars.filter(car =>
       car
       && typeof car === "object"
       && typeof car.name === "string"
+      && car.name.trim()
       && car.name.length <= 500
       && (car.rating === "" || CLASS_ORDER.includes(car.rating))
     );
     if(!cachedCars.length) return null;
+    const age = Date.now() - parsed.fetchedAt;
     return {
       cars:cachedCars,
-      isFresh:Date.now() - parsed.fetchedAt <= FH6_CAR_DATA_CACHE_TTL_MS,
+      isFresh:age >= 0 && age <= FH6_CAR_DATA_CACHE_TTL_MS,
       // Absent on any cache written before this field existed -- null just
       // means "unknown", which fillCarSuggestions treats as "can't confirm
       // this is current" and re-fetches, same as a real mismatch would.
-      revisionId: typeof parsed.revisionId === "number" ? parsed.revisionId : null
+      // Older caches paired content with a separate request's revision. Keep
+      // their cars available, but refresh before trusting that revision again.
+      revisionId:parsed.schemaVersion === 2 && Number.isSafeInteger(parsed.revisionId) && parsed.revisionId > 0 ? parsed.revisionId : null
     };
   }catch(e){
     return null;
@@ -3909,9 +4597,10 @@ function loadCachedFh6CarData(){
 function saveCachedFh6CarData(carsData, revisionId){
   try{
     localStorage.setItem(FH6_CAR_DATA_CACHE_KEY, JSON.stringify({
+      schemaVersion:2,
       fetchedAt: Date.now(),
       cars: carsData,
-      revisionId: typeof revisionId === "number" ? revisionId : null
+      revisionId:Number.isSafeInteger(revisionId) && revisionId > 0 ? revisionId : null
     }));
   }catch(e){ /* non-critical, suggestions just won't be cached */ }
 }
@@ -3928,8 +4617,37 @@ function applyFh6CarData(carsData){
     else fh6CarsByModelName.set(key, [car]);
   });
   renderCarSuggestions();
-  updateClassFromName();
+  // Only a person's name/suggestion interaction may assign a stock class.
+  // Refreshing external data must not change an open form's chosen setup.
   completeMissingYearsFromFandomData();
+}
+
+function setCarDatabaseStatus(state){
+  const status = document.querySelector("#panelGarage .foot > span");
+  if(!status) return;
+  const messages = {
+    loading:"Loading car suggestions. You can also add cars manually.",
+    cached:"Using saved car suggestions while checking for updates.",
+    ready:"Car database powered by the Forza Wiki (FH6)",
+    offline:"Using saved car suggestions; the update is unavailable.",
+    unavailable:"Car suggestions are unavailable. You can still add cars manually."
+  };
+  status.id = "carDatabaseStatus";
+  status.textContent = messages[state] || messages.ready;
+  status.dataset.state = state;
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+  const input = document.getElementById("newName");
+  const describedBy = new Set((input?.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean));
+  describedBy.add(status.id);
+  input?.setAttribute("aria-describedby", [...describedBy].join(" "));
+}
+
+function showCarDataNotice(message, state=""){
+  const status = document.getElementById("shareStatus");
+  // Optional suggestions must not replace an active warning about unsaved data.
+  if(status?.dataset.state === "error" && status.classList.contains("show")) return;
+  setShareStatus(message, state);
 }
 
 // A cached list applies immediately, so autocomplete and class-detection
@@ -3944,33 +4662,36 @@ function applyFh6CarData(carsData){
 async function fillCarSuggestions(){
   const cached = loadCachedFh6CarData();
   if(cached) applyFh6CarData(cached.cars);
+  setCarDatabaseStatus(cached ? "cached" : "loading");
 
-  let knownRevisionId = null;
-  if(cached && cached.isFresh){
-    knownRevisionId = await fetchFh6CarRevisionId();
-    if(knownRevisionId !== null && knownRevisionId === cached.revisionId) return;
+  if(cached && cached.isFresh && cached.revisionId !== null){
+    const latestRevisionId = await fetchFh6CarRevisionId();
+    if(latestRevisionId !== null && latestRevisionId === cached.revisionId){
+      setCarDatabaseStatus("ready");
+      return;
+    }
   }
 
   try{
-    // Fire the revision lookup alongside the content fetch instead of after
-    // it -- they're independent requests, so on a cold cache (no prior
-    // check to reuse) there's no reason to pay for them back-to-back. The
-    // content fetch is the slower of the two either way, so this makes the
-    // revision check essentially free.
-    const revisionPromise = knownRevisionId === null ? fetchFh6CarRevisionId() : Promise.resolve(knownRevisionId);
-    const fresh = await fetchFh6CarData();
-    knownRevisionId = await revisionPromise;
-    applyFh6CarData(fresh);
-    saveCachedFh6CarData(fresh, knownRevisionId);
+    // Cold or stale loads need only this one bounded request. Its revision is
+    // part of the content response, so no auxiliary request delays the list.
+    const snapshot = await fetchFh6CarData();
+    applyFh6CarData(snapshot.cars);
+    saveCachedFh6CarData(snapshot.cars, snapshot.revisionId);
+    setCarDatabaseStatus("ready");
     // Only announce when we can prove the wiki page itself changed -- a
     // known prior revisionId that doesn't match the one we just fetched --
     // not just "we happened to refetch" (first-ever load, or an older
     // cache written before revisionId existed and so has none to compare).
-    if(cached && typeof cached.revisionId === "number" && knownRevisionId !== null && knownRevisionId !== cached.revisionId){
-      setShareStatus("Car database updated.", "success");
+    if(cached && cached.revisionId !== null && snapshot.revisionId !== null && snapshot.revisionId !== cached.revisionId){
+      showCarDataNotice("Car database updated.", "success");
     }
   }catch(e){
-    if(!cached) console.error("Could not load FH6 car suggestions", e);
+    console.error("Could not update FH6 car suggestions", e);
+    setCarDatabaseStatus(cached ? "offline" : "unavailable");
+    showCarDataNotice(cached
+      ? "Using saved car suggestions. The update is unavailable."
+      : "Car suggestions unavailable. You can still add cars manually.");
   }
 }
 
@@ -3983,14 +4704,8 @@ function renderCarSuggestions(){
   const input = document.getElementById("newName");
   const query = normalizeCarSearch(input.value);
   if(!panel) return;
-  if(query.length < 2){
-    currentSuggestions = [];
-    activeSuggestionIndex = -1;
-    panel.replaceChildren();
-    panel.hidden = true;
-    setCarSuggestionsLayerOpen(false);
-    input.setAttribute("aria-expanded", "false");
-    syncActiveSuggestion();
+  if(query.length < 2 || document.activeElement !== input){
+    hideCarSuggestions();
     return;
   }
 
@@ -4041,6 +4756,11 @@ function syncActiveSuggestion(){
   const active = activeSuggestionIndex >= 0
     ? document.getElementById("carSuggestion-" + activeSuggestionIndex)
     : null;
+  document.querySelectorAll("#carSuggestions .suggestion").forEach(option=>{
+    const selected = option === active;
+    option.classList.toggle("active", selected);
+    option.setAttribute("aria-selected", String(selected));
+  });
   if(active){
     input.setAttribute("aria-activedescendant", active.id);
     active.scrollIntoView({block:"nearest"});
@@ -4050,6 +4770,9 @@ function syncActiveSuggestion(){
 }
 
 function hideCarSuggestions(){
+  debouncedNameSuggestions.cancel();
+  clearTimeout(carSuggestionsBlurTimer);
+  carSuggestionsBlurTimer = 0;
   const panel = document.getElementById("carSuggestions");
   const input = document.getElementById("newName");
   currentSuggestions = [];
@@ -4085,7 +4808,16 @@ function selectCarSuggestion(index){
   input.focus();
 }
 
+let carClassManuallySelected = false;
+function resetCarClassOverride(){
+  carClassManuallySelected = false;
+}
+document.getElementById("newClass").addEventListener("change", ()=>{
+  carClassManuallySelected = true;
+});
+
 function updateClassFromName(){
+  if(editingCarId !== null || carClassManuallySelected) return;
   const rawName = document.getElementById("newName").value.trim();
   const name = rawName.toLowerCase();
   const query = normalizeCarSearch(rawName);
@@ -4176,8 +4908,17 @@ function makeChip(label, onRemove){
   return c;
 }
 
+let editingCarSnapshot = null;
+let editingCarConflictVersion = null;
+let editingRemovedCarId = null;
+
 function leaveCarEditMode(render=true){
+  const hadEditConflict = editingCarConflictVersion !== null;
   editingCarId = null;
+  editingCarSnapshot = null;
+  editingCarConflictVersion = null;
+  editingRemovedCarId = null;
+  resetCarClassOverride();
   const nameInput = document.getElementById("newName");
   const noteInput = document.getElementById("newNote");
   const classSelect = document.getElementById("newClass");
@@ -4193,6 +4934,7 @@ function leaveCarEditMode(render=true){
   document.getElementById("cancelEditBtn").hidden = true;
   hideCarSuggestions();
   syncNameClearButton();
+  if(hadEditConflict) clearPersistenceWarning();
   if(render) renderList();
 }
 
@@ -4200,6 +4942,9 @@ function startCarEdit(id){
   const car = cars.find(item=>item.id === id);
   if(!car) return;
   editingCarId = id;
+  editingRemovedCarId = null;
+  editingCarSnapshot = storedCarCopy(car);
+  editingCarConflictVersion = null;
   document.getElementById("newName").value = car.name;
   document.getElementById("newNote").value = car.note || "";
   const classSelect = document.getElementById("newClass");
@@ -4245,22 +4990,36 @@ function splitCarNameYear(name){
   return match ? {year: match[1], rest: match[2]} : {year: "", rest: text};
 }
 
+const garageSortMetaCache = new WeakMap();
+function garageSortMeta(car){
+  let meta = garageSortMetaCache.get(car);
+  if(meta && meta.name === car.name && meta.cls === car.cls && meta.race === car.race) return meta;
+  const {year, rest} = splitCarNameYear(car.name);
+  meta = {
+    name:car.name, cls:car.cls, race:car.race,
+    model:rest, year:year ? Number(year) : -Infinity,
+    raceRank:raceRank(car.race), classRank:classRank(car.cls)
+  };
+  garageSortMetaCache.set(car, meta);
+  return meta;
+}
+
 function carComparatorFor(mode){
   // "Name" sorting (both here in the default tie-break and in the explicit
   // Name modes below) compares only the model text with the leading year
   // stripped off (e.g. "Ford GT", not "2005 Ford GT") -- otherwise, since
   // every migrated/completed name starts with its year, sorting by name
   // would really just be sorting by year in disguise.
-  const nameOnly = (car)=> splitCarNameYear(car.name).rest;
-  const defaultCompare = (a,b)=> raceRank(a.race)-raceRank(b.race) || classRank(a.cls)-classRank(b.cls) || nameOnly(a).localeCompare(nameOnly(b));
+  const nameOnly = (car)=> garageSortMeta(car).model;
+  const defaultCompare = (a,b)=>{
+    const left = garageSortMeta(a), right = garageSortMeta(b);
+    return left.raceRank-right.raceRank || left.classRank-right.classRank || left.model.localeCompare(right.model);
+  };
   // "Year" sorting treats cars with no year at all (rest === full name, so
   // no leading year was found) as oldest -- they sink to the bottom of a
   // newest-first sort and the top of an oldest-first one, rather than
   // comparing as the numeric value 0 next to real years.
-  const yearOnly = (car)=>{
-    const {year} = splitCarNameYear(car.name);
-    return year ? Number(year) : -Infinity;
-  };
+  const yearOnly = (car)=> garageSortMeta(car).year;
   switch(mode){
     case "alpha-asc":
       return (a,b)=> nameOnly(a).localeCompare(nameOnly(b)) || defaultCompare(a,b);
@@ -4271,19 +5030,124 @@ function carComparatorFor(mode){
     case "year-asc": // oldest model year first
       return (a,b)=> (yearOnly(a)-yearOnly(b)) || defaultCompare(a,b);
     case "class-asc": // D (lowest PI) to X (highest PI)
-      return (a,b)=> (classRank(b.cls)-classRank(a.cls)) || defaultCompare(a,b);
+      return (a,b)=> (garageSortMeta(b).classRank-garageSortMeta(a).classRank) || defaultCompare(a,b);
     case "class-desc": // X (highest PI) to D (lowest PI)
-      return (a,b)=> (classRank(a.cls)-classRank(b.cls)) || defaultCompare(a,b);
+      return (a,b)=> (garageSortMeta(a).classRank-garageSortMeta(b).classRank) || defaultCompare(a,b);
     default:
       return defaultCompare;
   }
 }
 
+const GARAGE_PAGE_SIZE = 100;
+let garagePage = 0;
+let garagePageCount = 1;
+let garagePageFilterKey = null;
+
+function garageFilterKey(){
+  return JSON.stringify([filterRace, filterClass, carSort]);
+}
+
+function filteredGarageCars(){
+  return cars
+    .filter(car=>(!filterRace || car.race === filterRace) && (!filterClass || car.cls === filterClass))
+    .sort(carComparatorFor(carSort));
+}
+
+function resetGaragePage(){
+  garagePage = 0;
+  garagePageFilterKey = null;
+}
+
+// Position the next render at a changed/restored car. The caller still performs
+// one renderAll, so locating the page does not add a second DOM rebuild.
+function showCarOnPage(id){
+  let list = filteredGarageCars();
+  let index = list.findIndex(car=>car.id === id);
+  if(index < 0 && cars.some(car=>car.id === id)){
+    filterRace = "";
+    filterClass = "";
+    const race = document.getElementById("fRace"), cls = document.getElementById("fClass");
+    race.value = "";
+    cls.value = "";
+    syncCustomSelect(race);
+    syncCustomSelect(cls);
+    list = filteredGarageCars();
+    index = list.findIndex(car=>car.id === id);
+  }
+  if(index < 0) return false;
+  garagePageFilterKey = garageFilterKey();
+  garagePage = Math.floor(index / GARAGE_PAGE_SIZE);
+  return true;
+}
+
+function changeGaragePage(step){
+  const next = Math.min(Math.max(0, garagePage + step), garagePageCount - 1);
+  if(next === garagePage) return;
+  garagePage = next;
+  renderList();
+  const list = document.getElementById("carList");
+  list.focus({preventScroll:true});
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  list.scrollIntoView({block:"start", behavior:reduceMotion ? "auto" : "smooth"});
+}
+
+function renderGaragePagination(count){
+  let pagination = document.getElementById("garagePagination");
+  if(!pagination){
+    pagination = document.createElement("nav");
+    pagination.id = "garagePagination";
+    pagination.className = "garage-pagination";
+    pagination.setAttribute("aria-label", "Garage pages");
+    const summary = document.createElement("span");
+    summary.id = "garagePageSummary";
+    summary.className = "garage-page-summary";
+    summary.setAttribute("aria-live", "polite");
+    summary.setAttribute("aria-atomic", "true");
+    const actions = document.createElement("div");
+    actions.className = "garage-page-actions";
+    const previous = document.createElement("button");
+    previous.id = "garagePagePrevious";
+    previous.type = "button";
+    previous.textContent = "Previous";
+    previous.setAttribute("aria-controls", "carList");
+    previous.onclick = ()=>changeGaragePage(-1);
+    const next = document.createElement("button");
+    next.id = "garagePageNext";
+    next.type = "button";
+    next.textContent = "Next";
+    next.setAttribute("aria-controls", "carList");
+    next.onclick = ()=>changeGaragePage(1);
+    actions.append(previous, next);
+    pagination.append(summary, actions);
+    const list = document.getElementById("carList");
+    list.setAttribute("tabindex", "-1");
+    list.setAttribute("role", "region");
+    list.setAttribute("aria-label", "Garage cars");
+    list.setAttribute("aria-describedby", summary.id);
+    list.after(pagination);
+  }
+  pagination.hidden = count <= GARAGE_PAGE_SIZE;
+  const first = garagePage * GARAGE_PAGE_SIZE + 1;
+  const last = Math.min(count, (garagePage + 1) * GARAGE_PAGE_SIZE);
+  document.getElementById("garagePageSummary").textContent = count
+    ? `${first}–${last} of ${count} cars · Page ${garagePage + 1} of ${garagePageCount}`
+    : "No cars to show";
+  document.getElementById("garagePagePrevious").disabled = garagePage === 0;
+  document.getElementById("garagePageNext").disabled = garagePage + 1 >= garagePageCount;
+}
+
 function renderList(){
   const wrap = document.getElementById("carList");
   wrap.innerHTML = "";
-  let list = cars.filter(c => (!filterRace || c.race===filterRace) && (!filterClass || c.cls===filterClass));
-  list.sort(carComparatorFor(carSort));
+  const filterKey = garageFilterKey();
+  if(filterKey !== garagePageFilterKey){
+    garagePage = 0;
+    garagePageFilterKey = filterKey;
+  }
+  const list = filteredGarageCars();
+  garagePageCount = Math.max(1, Math.ceil(list.length / GARAGE_PAGE_SIZE));
+  garagePage = Math.min(garagePage, garagePageCount - 1);
+  renderGaragePagination(list.length);
 
   if(list.length===0){
     const empty = document.createElement("div"); empty.className="empty";
@@ -4301,7 +5165,7 @@ function renderList(){
   // row. With a few dozen cars this is invisible either way, but it scales
   // far better if someone's garage grows toward the game's full roster.
   const fragment = document.createDocumentFragment();
-  list.forEach(c=>{
+  list.slice(garagePage * GARAGE_PAGE_SIZE, (garagePage + 1) * GARAGE_PAGE_SIZE).forEach(c=>{
     const row = document.createElement("div"); row.className="row" + (c.disliked ? " disliked" : "");
     row.dataset.id = c.id;
     row.style.setProperty("--row-accent", RACE_COLOR[c.race] || "transparent");
@@ -4508,7 +5372,7 @@ function spinCarPerks(car){
 
 // Built once per car and reused. SPIN_UNLOCK_CARS never changes at runtime,
 // so this string is immutable -- but it was being rebuilt (array spread, perk
-// label lookups, join, toLowerCase) for all 142 cars on every single search
+// label lookups, join, toLowerCase) for every car on every single search
 // keystroke and every filter click. Same reasoning as carSearchMeta above.
 const spinSearchTextCache = new WeakMap();
 function buildSpinCarSearchText(car){
@@ -4625,14 +5489,14 @@ function initSpinLegendAnchor(){
   window.addEventListener("resize", updateSpinLegendAnchor);
 }
 
+const spinDesktopLayout = matchMedia("(min-width:561px)");
 function splitSpinGroupsIntoBalancedColumns(groups){
   const columns = [[], []];
   const weights = [0, 0];
   groups.forEach(group => {
-    const groupWeight = 1 + group.cars.length;
     const targetColumn = weights[0] <= weights[1] ? 0 : 1;
     columns[targetColumn].push(group);
-    weights[targetColumn] += groupWeight;
+    weights[targetColumn] += 1 + group.cars.length;
   });
   return columns;
 }
@@ -4640,6 +5504,19 @@ function splitSpinGroupsIntoBalancedColumns(groups){
 function renderSuperWheelspinCars(){
   const list = document.getElementById("spinGroups");
   const {brandGroups, filteredGroups, query} = getFilteredWheelspinGroups();
+  const focusedCheck = list.contains(document.activeElement) ? document.activeElement.closest(".spin-check") : null;
+  const focusedHeading = list.contains(document.activeElement) ? document.activeElement.closest(".spin-group-head") : null;
+  const focusedBrand = focusedHeading?.closest(".spin-group")?.dataset.brand;
+  const previousNames = focusedCheck ? new Set([...list.querySelectorAll(".spin-car")].map(row=>row.dataset.car)) : null;
+  const previousOrderedNames = previousNames
+    ? brandGroups.flatMap(group=>group.cars.map(spinCarName)).filter(name=>previousNames.has(name)) : [];
+  const focusedRow = focusedCheck?.closest(".spin-car");
+  const visibleNames = filteredGroups.flatMap(group => group.cars.map(spinCarName));
+  const focusName = focusedRow
+    ? visibleNames.includes(focusedRow.dataset.car) ? focusedRow.dataset.car
+      : visibleNames[Math.min(previousOrderedNames.indexOf(focusedRow.dataset.car), visibleNames.length - 1)]
+    : null;
+  let focusTarget = null;
   const fullCarsByBrand = new Map(brandGroups.map(group=>[group.title, group.cars]));
   const visibleCount = filteredGroups.reduce((sum, group) => sum + group.cars.length, 0);
   const totalCount = brandGroups.reduce((sum, group) => sum + group.cars.length, 0);
@@ -4663,33 +5540,25 @@ function renderSuperWheelspinCars(){
     empty.className = "spin-empty";
     empty.textContent = "No Spins & Unlocks cars match the current filters.";
     list.appendChild(empty);
+    if(focusedCheck || focusedHeading) document.getElementById("spinSearch").focus({preventScroll:true});
     return;
   }
 
   const fragment = document.createDocumentFragment();
-  const columns = splitSpinGroupsIntoBalancedColumns(filteredGroups);
-  // Precomputing each group's position once, instead of calling
-  // filteredGroups.indexOf(group) inside the render loop below, avoids
-  // re-scanning the group list from the start for every single group.
-  const groupIndexByTitle = new Map(filteredGroups.map((group, index) => [group.title, index]));
-
-  columns.forEach(groups => {
-    const column = document.createElement("div");
-    column.className = "spin-column";
-
-    groups.forEach(group => {
-    const groupIndex = groupIndexByTitle.get(group.title);
+  const sectionsByBrand = new Map();
+  filteredGroups.forEach((group, groupIndex) => {
     const isCollapsed = collapsedSpinBrands.has(group.title);
     const section = document.createElement("section");
     section.className = "spin-group";
     section.dataset.brand = group.title;
     if(isCollapsed) section.classList.add("is-collapsed");
-    section.style.setProperty("--brand-order", groupIndex);
     const heading = document.createElement("button");
     heading.type = "button";
     heading.className = "spin-group-head";
     heading.setAttribute("aria-expanded", String(!isCollapsed));
     heading.setAttribute("aria-label", `${isCollapsed ? "Expand" : "Collapse"} ${group.title}`);
+    heading.setAttribute("aria-controls", `spin-brand-${groupIndex}`);
+    if(group.title === focusedBrand) focusTarget = heading;
 
     const headingMain = document.createElement("span");
     headingMain.className = "spin-group-heading-main";
@@ -4718,7 +5587,9 @@ function renderSuperWheelspinCars(){
     carList.className = "spin-car-list";
     const carBody = document.createElement("div");
     carBody.className = "spin-group-body";
+    carBody.id = `spin-brand-${groupIndex}`;
     carBody.setAttribute("aria-hidden", String(isCollapsed));
+    carBody.toggleAttribute("inert", isCollapsed);
 
     group.cars.forEach(carInfo => {
       const car = spinCarName(carInfo);
@@ -4780,6 +5651,7 @@ function renderSuperWheelspinCars(){
       check.setAttribute("aria-pressed", String(isOwned));
       check.setAttribute("aria-label", (isOwned ? "Mark as not collected: " : "Mark as collected: ") + car);
       check.title = isOwned ? "Collected" : "Mark as collected";
+      if(car === focusName && !isCollapsed) focusTarget = check;
       tail.appendChild(check);
 
       item.appendChild(yearLabel);
@@ -4791,12 +5663,25 @@ function renderSuperWheelspinCars(){
     section.appendChild(heading);
     carBody.appendChild(carList);
     section.appendChild(carBody);
-    column.appendChild(section);
-    });
-    fragment.appendChild(column);
+    sectionsByBrand.set(group.title, section);
   });
+  if(spinDesktopLayout.matches){
+    splitSpinGroupsIntoBalancedColumns(filteredGroups).forEach(groups=>{
+      const column = document.createElement("div");
+      column.className = "spin-column";
+      groups.forEach(group=>column.appendChild(sectionsByBrand.get(group.title)));
+      fragment.appendChild(column);
+    });
+  }else{
+    filteredGroups.forEach(group=>fragment.appendChild(sectionsByBrand.get(group.title)));
+  }
   list.appendChild(fragment);
+  if(focusedCheck || focusedHeading){
+    (focusTarget || document.getElementById("spinSearch")).focus({preventScroll:true});
+    focusTarget?.scrollIntoView({block:"nearest", inline:"nearest"});
+  }
 }
+spinDesktopLayout.addEventListener("change", renderSuperWheelspinCars);
 
 let lastModalFocus = null;
 
@@ -4946,7 +5831,8 @@ function switchTabWithSlide(targetButton){
   });
 
   if(targetTab === currentTab){
-    if(targetTab === "spins") tabStage.classList.add("spins-settled");
+    syncGaugeVisibility(targetTab);
+    if(targetTab === "spins"){ tabStage.classList.add("spins-settled"); updateSpinLegendAnchor(); }
     return;
   }
 
@@ -5010,14 +5896,35 @@ document.querySelectorAll(".tab").forEach(t=>{
   t.onclick = ()=> switchTabWithSlide(t);
 });
 
+const tabStrip = document.querySelector(".tabs");
+const tabBar = document.querySelector(".tabbar");
+const tabScrollCue = document.createElement("button");
+tabScrollCue.id = "tabScrollCue";
+tabScrollCue.type = "button";
+tabScrollCue.setAttribute("aria-label", "Show more tracker sections");
+tabScrollCue.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg>';
+tabBar.append(tabScrollCue);
 function syncTabScrollHint(){
-  const tabs = document.querySelector(".tabs");
-  if(!tabs) return;
-  const remaining = tabs.scrollWidth - tabs.clientWidth - tabs.scrollLeft;
-  tabs.classList.toggle("has-overflow", remaining > 2);
+  const remaining = tabStrip.scrollWidth - tabStrip.clientWidth - tabStrip.scrollLeft;
+  tabStrip.classList.toggle("has-overflow", remaining > 2);
+  if(remaining <= 2 && document.activeElement === tabScrollCue){
+    tabStrip.scrollLeft = tabStrip.scrollWidth;
+    const visibleTabs = tabStrip.querySelectorAll(".tab");
+    visibleTabs[visibleTabs.length - 1]?.focus({preventScroll:true});
+  }
+  tabScrollCue.hidden = remaining <= 2;
+  const tabsRect = tabStrip.getBoundingClientRect(), barRect = tabBar.getBoundingClientRect();
+  const backupRect = tabBar.querySelector(".share-icons-wrap")?.getBoundingClientRect();
+  const gap = backupRect ? Math.max(0, backupRect.left - tabsRect.right) : 0;
+  tabScrollCue.style.left = (tabsRect.right - barRect.left + Math.min(gap, 12) - 24) + "px";
 }
-document.querySelector(".tabs").addEventListener("scroll", syncTabScrollHint, {passive:true});
+tabScrollCue.addEventListener("click", () => {
+  tabStrip.scrollTo({left:tabStrip.scrollWidth,
+    behavior:matchMedia("(prefers-reduced-motion:reduce)").matches ? "auto" : "smooth"});
+});
+tabStrip.addEventListener("scroll", syncTabScrollHint, {passive:true});
 window.addEventListener("resize", syncTabScrollHint);
+if(typeof ResizeObserver !== "undefined") new ResizeObserver(syncTabScrollHint).observe(tabStrip);
 syncTabScrollHint();
 // The tab labels are Rajdhani, which is still downloading when this script
 // runs -- so the first measurement above is of the FALLBACK font's metrics,
@@ -5093,14 +6000,19 @@ function hideUndoToast(){
 }
 
 function undoDelete(){
-  if(!pendingUndo) return;
-  const {car, index} = pendingUndo;
+  const undo = pendingUndo;
+  if(!undo) return;
+  return runGarageMutation(()=>{
+  if(pendingUndo !== undo) return;
+  const {car, index} = undo;
   const at = Math.min(Math.max(index, 0), cars.length);
   cars.splice(at, 0, car);
-  save();
+  const saved = save({changedIds:[car.id]});
   hideUndoToast();
+  showCarOnPage(car.id);
   renderAll();
-  setShareStatus("Restored.", "success");
+  if(saved) setShareStatus("Restored.", "success");
+  });
 }
 
 document.getElementById("undoBtn").onclick = undoDelete;
@@ -5112,16 +6024,21 @@ document.getElementById("carList").addEventListener("click", event=>{
   if(!button) return;
   const row = button.closest(".row");
   if(!row) return;
-  const id = Number(row.dataset.id);
-  const car = cars.find(item => item.id === id);
+  const car = cars.find(item => String(item.id) === row.dataset.id);
   if(!car) return;
+  const id = car.id;
   if(button.dataset.action === "edit"){
+    if(garageMutationPending) return;
     startCarEdit(id);
     return;
   }
   if(button.dataset.action === "flag"){
-    car.disliked = !car.disliked;
-    save();
+    const disliked = !car.disliked;
+    runGarageMutation(()=>{
+    const car = cars.find(item=>item.id === id);
+    if(!car) return;
+    car.disliked = disliked;
+    save({changedIds:[id]});
     // renderChips() is deliberately not called: the filter chips reflect the
     // race/class filters, which a set-aside toggle cannot change.
     //
@@ -5134,20 +6051,25 @@ document.getElementById("carList").addEventListener("click", event=>{
     // action icons the user was aiming at silently vanished mid-click.
     // Same surgical-update approach the Spins tab already uses for its own
     // check-off path (see updateSpinCarRow).
-    updateCarRowFlag(row, car);
+    const currentRow = document.querySelector(`.row[data-id="${CSS.escape(String(id))}"]`);
+    if(currentRow) updateCarRowFlag(currentRow, car);
     renderGauge();
     renderGrid();
+    });
     return;
   }
   if(button.dataset.action === "delete"){
+    runGarageMutation(()=>{
     // Capture the index before removing so Undo can restore the exact order.
     const index = cars.findIndex(item => item.id === id);
-    const removed = index >= 0 ? cars[index] : car;
+    if(index < 0) return;
+    const removed = cars[index];
     cars = cars.filter(item => item.id !== id);
     if(editingCarId === id) leaveCarEditMode(false);
-    save();
+    save({changedIds:[id]});
     renderAll();
     showUndoToast(removed, index);
+    });
   }
 });
 
@@ -5162,7 +6084,7 @@ document.querySelectorAll("[data-spin-filter]").forEach(button => {
   });
 });
 // One delegated listener for the whole Spins & Unlocks list instead of two
-// closures per rendered row (142 of them on a full render, re-created every
+// closures per rendered row (re-created every
 // time the list rebuilt). The container outlives every render, so this is
 // bound once at startup and never re-attached.
 document.getElementById("spinGroups").addEventListener("click", event=>{
@@ -5337,24 +6259,34 @@ document.getElementById("newName").addEventListener("input", ()=>{
 });
 document.getElementById("newName").addEventListener("change", updateClassFromName);
 document.getElementById("newName").addEventListener("keydown", (e)=>{
+  if(e.key === "Escape"){
+    hideCarSuggestions();
+    return;
+  }
+  // Arrow keys must use the current query even if the typing debounce has not run yet.
+  if(e.key === "ArrowDown" || e.key === "ArrowUp") renderCarSuggestions();
   if(currentSuggestions.length === 0) return;
   if(e.key === "ArrowDown"){
     e.preventDefault();
     activeSuggestionIndex = Math.min(activeSuggestionIndex + 1, currentSuggestions.length - 1);
-    renderCarSuggestions();
+    syncActiveSuggestion();
   } else if(e.key === "ArrowUp"){
     e.preventDefault();
     activeSuggestionIndex = Math.max(activeSuggestionIndex - 1, 0);
-    renderCarSuggestions();
+    syncActiveSuggestion();
   } else if(e.key === "Enter" && activeSuggestionIndex >= 0){
     e.preventDefault();
     selectCarSuggestion(activeSuggestionIndex);
-  } else if(e.key === "Escape"){
-    hideCarSuggestions();
   }
 });
+document.getElementById("newName").addEventListener("focus", ()=>{
+  clearTimeout(carSuggestionsBlurTimer);
+  carSuggestionsBlurTimer = 0;
+});
 document.getElementById("newName").addEventListener("blur", ()=>{
-  setTimeout(hideCarSuggestions, 120);
+  debouncedNameSuggestions.cancel();
+  clearTimeout(carSuggestionsBlurTimer);
+  carSuggestionsBlurTimer = setTimeout(hideCarSuggestions, 120);
 });
 document.getElementById("clearName").onclick = ()=>{
   const input = document.getElementById("newName");
@@ -5365,30 +6297,99 @@ document.getElementById("clearName").onclick = ()=>{
 };
 
 document.getElementById("addBtn").onclick = ()=>{
+  if(garageMutationPending) return;
+  return runGarageMutation(()=>{
   const name = document.getElementById("newName").value.trim();
   if(!name) return;
   const cls = document.getElementById("newClass").value;
   const race = document.getElementById("newRace").value;
   const note = document.getElementById("newNote").value.trim();
+  let changedId = editingCarId;
+  const wasEditing = editingCarId !== null;
   if(editingCarId !== null){
+    // An edit form can outlive another tab's save. Read the committed car
+    // before writing, including records whose storage event is still queued.
+    const state = readCollection("garage");
+    if(!state) return;
+    const latestCar = projectCollection(state).find(car=>car.id === editingCarId)
+      || (state.epoch === garageBaselineEpoch && unsavedGarageIds.has(String(editingCarId)) && !garageBaseline.has(String(editingCarId))
+        && !garageDraftConflicts.get(String(editingCarId))?.has("removed")
+        ? cars.find(car=>car.id === editingCarId) : null);
     const index = cars.findIndex(car=>car.id === editingCarId);
-    if(index < 0){
-      leaveCarEditMode();
+    if(index < 0 || !latestCar){
+      editingRemovedCarId = editingCarId;
+      editingCarId = null;
+      editingCarSnapshot = null;
+      editingCarConflictVersion = null;
+      document.querySelector(".addrow").classList.remove("editing");
+      document.getElementById("addBtn").textContent = "Add car";
+      document.getElementById("cancelEditBtn").hidden = false;
+      setShareStatus("This car was removed in another tab. Your draft is still here; use Add car to save it as a new entry.", "error", {persistent:true});
       return;
     }
-    cars[index] = {...cars[index], name, cls, race, note};
-    leaveCarEditMode(false);
+    const draft = {name, cls, race, note};
+    const original = editingCarSnapshot || latestCar;
+    const pendingConflicts = garageDraftConflicts.get(String(editingCarId)) || new Set();
+    const fields = Object.keys(draft).filter(field=>draft[field] !== original[field]
+      || (pendingConflicts.has(field) && draft[field] !== latestCar[field]));
+    const conflicts = fields.filter(field=>latestCar[field] !== draft[field]
+      && (latestCar[field] !== original[field] || pendingConflicts.has(field)));
+    const conflictVersion = JSON.stringify(conflicts.map(field=>[field, latestCar[field], draft[field]]));
+    if(conflicts.length && editingCarConflictVersion !== conflictVersion){
+      editingCarConflictVersion = conflictVersion;
+      const labels = {name:"name", cls:"class", race:"race type", note:"note"};
+      setShareStatus("This car's " + conflicts.map(field=>labels[field]).join(", ") + " changed in another tab. Your draft is still here. Save again to use your draft, or cancel to keep the saved version.", "error", {persistent:true});
+      return;
+    }
+    editingCarConflictVersion = null;
+    cars[index] = {...latestCar, disliked:cars[index].disliked,
+      ...Object.fromEntries(fields.map(field=>[field, draft[field]]))};
   }else{
-    cars.push({id:mintCarId(), name, cls, race, note, disliked:false});
+    if(editingRemovedCarId !== null){
+      const retiredId = String(editingRemovedCarId);
+      cars = cars.filter(car=>String(car.id) !== retiredId);
+      unsavedGarageIds.delete(retiredId);
+      garageDraftConflicts.delete(retiredId);
+      editingRemovedCarId = null;
+    }
+    changedId = mintCarId();
+    cars.push({id:changedId, name, cls, race, note, disliked:false});
+  }
+  const saved = save({changedIds:[changedId], resolvedConflictId:wasEditing ? String(changedId) : undefined});
+  if(saved && wasEditing) leaveCarEditMode(false);
+  else if(saved){
     document.getElementById("newName").value="";
     document.getElementById("newNote").value="";
+    resetCarClassOverride();
     hideCarSuggestions();
     syncNameClearButton();
+  }else if(!wasEditing){
+    // Retry edits this same unsaved row instead of adding a duplicate.
+    editingCarId = changedId;
+    document.querySelector(".addrow").classList.add("editing");
+    document.getElementById("addBtn").textContent = "Save";
+    document.getElementById("cancelEditBtn").hidden = false;
   }
-  save();
+  showCarOnPage(changedId);
   renderAll();
+  });
 };
-document.getElementById("cancelEditBtn").onclick = ()=>leaveCarEditMode();
+document.getElementById("cancelEditBtn").onclick = ()=>{
+  const draftId = editingCarId ?? editingRemovedCarId;
+  if(draftId !== null && garageDraftConflicts.has(String(draftId))){
+    const id = String(draftId);
+    return runGarageMutation(()=>{
+      const saved = garageBaseline.get(id)?.car;
+      cars = saved ? cars.map(car=>String(car.id) === id ? storedCarCopy(saved) : car)
+        : cars.filter(car=>String(car.id) !== id);
+      unsavedGarageIds.delete(id);
+      garageDraftConflicts.delete(id);
+      leaveCarEditMode();
+      clearPersistenceWarning();
+    });
+  }
+  leaveCarEditMode();
+};
 
 document.getElementById("exportSetupFile").onclick = exportSetupFile;
 document.getElementById("importSetupTrigger").onclick = ()=>document.getElementById("setupFileInput").click();
@@ -5398,12 +6399,15 @@ document.getElementById("setupFileInput").addEventListener("change", event=>{
 
 document.getElementById("resetBtn").onclick = ()=>{
   if(!confirm("Clear all cars? This can't be undone.")) return;
+  return runGarageMutation(()=>{
+  if(!save({replace:true, cars:[]})) return;
   // A single-car Undo toast can't survive a wholesale wipe -- restoring one
   // row into a just-cleared garage would be nonsense.
   hideUndoToast();
   leaveCarEditMode(false);
-  cars = [];
-  save(); renderAll();
+  resetGaragePage();
+  renderAll();
+  });
 };
 
 fillSelect(document.getElementById("fRace"), RACE_ORDER, true, "All race types");
@@ -5466,7 +6470,8 @@ drawMomijiLogo("devMomijiIcon", 16);
     // in and out -- this curve (ease-out-expo-ish) front-loads the motion and
     // settles quickly, closer to a physical slide-and-catch than the softer,
     // floatier default "ease" was giving it.
-    drawer.style.transition = animate ? "transform .28s cubic-bezier(0.16, 1, 0.3, 1)" : "none";
+    drawer.style.transition = animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "transform .28s cubic-bezier(0.16, 1, 0.3, 1)" : "none";
     drawer.style.transform = `translateX(${open ? 0 : trayWidth}px)`;
     panel.classList.toggle("open", open);
     // The tray is parked off-screen when closed, so its buttons must leave the
@@ -5484,6 +6489,7 @@ drawMomijiLogo("devMomijiIcon", 16);
   setOpen(false, false);
 
   handle.addEventListener("pointerdown", (e) => {
+    if(e.button !== 0) return;
     dragging = true; moved = false; startX = e.clientX;
     trayWidth = tray.getBoundingClientRect().width;
     startWasOpen = panel.classList.contains("open");
@@ -5509,10 +6515,8 @@ drawMomijiLogo("devMomijiIcon", 16);
   function endDrag(e){
     if(!dragging) return;
     dragging = false;
-    if(!moved){
-      setOpen(!panel.classList.contains("open"), true);
-      return;
-    }
+    if(e.type === "pointercancel"){ moved = false; setOpen(startWasOpen, true); return; }
+    if(!moved) return;
     const dx = e.clientX - startX;
     const base = startWasOpen ? 0 : trayWidth;
     const offset = Math.max(0, Math.min(trayWidth, base + dx));
@@ -5520,6 +6524,17 @@ drawMomijiLogo("devMomijiIcon", 16);
   }
   handle.addEventListener("pointerup", endDrag);
   handle.addEventListener("pointercancel", endDrag);
+  handle.addEventListener("click", event => {
+    if(moved && event.detail !== 0){ moved = false; return; }
+    moved = false;
+    setOpen(!panel.classList.contains("open"), true);
+  });
+  panel.addEventListener("keydown", event => {
+    if(event.key !== "Escape" || !panel.classList.contains("open")) return;
+    event.preventDefault();
+    setOpen(false, true);
+    handle.focus();
+  });
 })();
 // Scoped to [data-dev-season] specifically, not every button in the panel --
 // the handle above is also a <button>, and giving it no data-dev-season
